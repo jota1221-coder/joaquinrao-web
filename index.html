@@ -180,6 +180,8 @@
   @media (max-width: 820px){ .project{ grid-template-columns:1fr; } .project .visual{ order:-1; } }
   .project .tagline{ font-family:var(--font-mono); font-size:0.72rem; letter-spacing:0.14em; text-transform:uppercase; color: var(--sky-dim); margin-bottom:14px; display:flex; align-items:center; gap:10px; }
   .project h3{ font-family:var(--font-display); font-weight:500; font-size: clamp(1.5rem, 3vw, 2rem); line-height:1.1; letter-spacing:-0.01em; margin-bottom: 14px; }
+  .project h3 a{ color: var(--star); transition: color 0.2s; }
+  .project h3 a:hover{ color: var(--star-deep); }
   .project p.desc{ color:var(--ink-muted); font-size:1.02rem; line-height:1.7; max-width:48ch; }
   .project .tags{ display:flex; flex-wrap:wrap; gap:8px; margin-top:20px; }
   .project .tags span{ font-family:var(--font-mono); font-size:0.72rem; color:var(--ink-muted); border:1px solid var(--line); padding:4px 10px; border-radius:2px; }
@@ -390,7 +392,7 @@
       <article class="project reveal">
         <div class="body">
           <div class="tagline"><span>CRM a medida · en producción</span></div>
-          <h3>CRM RAOVET</h3>
+          <h3><a href="crm-raovet.html">CRM RAOVET</a></h3>
           <p class="desc">El sistema que la distribuidora usa todos los días: centraliza una base curada de más de 400 clientes activos, los geolocaliza y arma las rutas de reparto con tráfico real, respetando la ventana horaria de atención de cada cliente. Reemplazó a las planillas dispersas por un sistema único y con memoria.</p>
           <div class="tags"><span>Next.js</span><span>TypeScript</span><span>Prisma + PostgreSQL</span><span>Google Routes API</span><span>Vitest + CI</span></div>
           <a class="go" href="crm-raovet.html">Leer el caso de estudio <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H8M17 7v9"/></svg></a>
@@ -405,7 +407,7 @@
       <article class="project reveal">
         <div class="body">
           <div class="tagline"><span>Astronomía + datos satelitales</span></div>
-          <h3>StarMap BA</h3>
+          <h3><a href="https://www.starmapba.com.ar" target="_blank" rel="noopener">StarMap BA</a></h3>
           <p class="desc">Encontrá los cielos más oscuros de la Provincia de Buenos Aires. Puntajes de observación en vivo combinando clima, contaminación lumínica (NASA VIIRS) y fase lunar. Incluye una predicción del cielo oscuro hacia 2035 a partir de series temporales.</p>
           <div class="tags"><span>Next.js</span><span>Leaflet</span><span>astronomy-engine</span><span>Python</span><span>Prisma</span></div>
           <a class="go" href="https://www.starmapba.com.ar" target="_blank" rel="noopener">Ver en vivo <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H8M17 7v9"/></svg></a>
@@ -420,7 +422,7 @@
       <article class="project reveal">
         <div class="body">
           <div class="tagline"><span>Visión por computadora</span></div>
-          <h3>Conteo de personas en tiempo real</h3>
+          <h3><a href="https://github.com/jota1221-coder/computer-vision" target="_blank" rel="noopener">Conteo de personas en tiempo real</a></h3>
           <p class="desc">Cuenta cuánta gente entra y sale, arma mapas de calor y dispara alertas, todo desde la cámara IP que el negocio ya tiene. Detección y seguimiento en vivo con YOLO11. Importante: cuenta, no identifica caras.</p>
           <div class="tags"><span>YOLO11</span><span>ByteTrack</span><span>Python</span><span>OpenCV</span><span>~15 FPS</span></div>
           <a class="go" href="https://github.com/jota1221-coder/computer-vision" target="_blank" rel="noopener">Ver el repo <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H8M17 7v9"/></svg></a>
