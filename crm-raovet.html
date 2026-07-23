@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRM RAOVET · Caso de estudio — Joaquín Rao</title>
+<meta name="description" content="Caso de estudio: un CRM a medida para una distribuidora veterinaria B2B. Más de 400 clientes activos, geolocalización y rutas de reparto con tráfico real. Las decisiones de datos que importaron.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230e1220'/%3E%3Cpath d='M16 4.5l1.9 8.6 8.6 1.9-8.6 1.9L16 25.5l-1.9-8.6L5.5 15l8.6-1.9z' fill='%23e6b45a'/%3E%3C/svg%3E">
+<meta property="og:type" content="article">
+<meta property="og:locale" content="es_AR">
+<meta property="og:site_name" content="Joaquín Rao">
+<meta property="og:url" content="https://joaquinrao.com.ar/crm-raovet.html">
+<meta property="og:title" content="CRM RAOVET · Caso de estudio — Joaquín Rao">
+<meta property="og:description" content="Un CRM a medida para una distribuidora veterinaria B2B: más de 400 clientes activos, geolocalización y rutas de reparto con tráfico real. Las decisiones de datos que importaron.">
+<meta property="og:image" content="https://joaquinrao.com.ar/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Work+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --night-0: oklch(12% 0.02 265);
+    --night-1: oklch(15.5% 0.025 265);
+    --night-2: oklch(19% 0.03 265);
+    --line:    oklch(31% 0.03 265);
+    --line-soft: oklch(24% 0.028 265);
+    --ink:       oklch(95% 0.012 85);
+    --ink-muted: oklch(75% 0.02 80);
+    --ink-faint: oklch(60% 0.022 258);
+    --star:      oklch(83% 0.125 78);
+    --star-deep: oklch(74% 0.135 68);
+    --sky:       oklch(74% 0.115 240);
+    --sky-dim:   oklch(62% 0.10 245);
+    --maxw: 1160px;
+    --readw: 720px;
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
+    --font-display: "Fraunces", Georgia, serif;
+    --font-body: "Work Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  }
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{
+    background: var(--night-1);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 17px;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+  }
+  a{ color: inherit; text-decoration: none; }
+  ::selection{ background: var(--star); color: var(--night-0); }
+  .wrap{ width:100%; max-width: var(--maxw); margin:0 auto; padding: 0 clamp(20px, 5vw, 40px); }
+  .read{ max-width: var(--readw); }
+  .kicker{
+    font-family: var(--font-mono); font-size: 0.72rem; font-weight: 500;
+    letter-spacing: 0.18em; text-transform: uppercase; color: var(--sky-dim);
+  }
+
+  /* NAV */
+  header.nav{
+    position: fixed; inset: 0 0 auto 0; z-index: 100;
+    background: color-mix(in oklab, var(--night-1) 82%, transparent);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.4s var(--ease);
+  }
+  header.nav.scrolled{ border-bottom-color: var(--line-soft); }
+  .nav-inner{ display:flex; align-items:center; justify-content:space-between; height: 68px; }
+  .brand{ font-family: var(--font-display); font-weight: 500; font-size: 1.15rem; letter-spacing: -0.01em; }
+  .nav-back{ font-family: var(--font-mono); font-size: 0.8rem; color: var(--ink-muted); display:flex; align-items:center; gap:8px; transition: color 0.2s; }
+  .nav-back:hover{ color: var(--star); }
+
+  /* HEADER */
+  .case-head{ padding: 160px 0 56px; border-bottom: 1px solid var(--line-soft); }
+  .case-head .kicker{ display:flex; align-items:center; gap:12px; }
+  .case-head .kicker .rule{ width:34px; height:1px; background: var(--sky-dim); }
+  h1.case-title{
+    font-family: var(--font-display); font-weight: 400;
+    font-size: clamp(2.2rem, 5.5vw, 3.8rem); line-height: 1.05; letter-spacing: -0.02em;
+    margin-top: 24px; max-width: 20ch;
+  }
+  h1.case-title em{ font-style: normal; color: var(--star); }
+  .case-lead{ margin-top: 24px; color: var(--ink-muted); font-size: clamp(1.02rem, 1.5vw, 1.15rem); max-width: 58ch; }
+  .case-meta{ margin-top: 30px; display:flex; gap: 22px; flex-wrap:wrap; font-family: var(--font-mono); font-size: 0.74rem; color: var(--ink-faint); letter-spacing: 0.04em; }
+  .case-meta span{ display:flex; align-items:center; gap:7px; }
+  .case-meta .d{ width:4px; height:4px; border-radius:50%; background: var(--sky-dim); }
+
+  /* STATS */
+  .stats{ border-bottom:1px solid var(--line-soft); background: var(--night-0); }
+  .stats-grid{ display:grid; grid-template-columns: repeat(3, 1fr); }
+  .stat{ padding: clamp(28px, 4vw, 44px) clamp(16px, 2.5vw, 30px); border-left:1px solid var(--line-soft); }
+  .stat:first-child{ border-left:none; }
+  @media (max-width: 640px){ .stats-grid{ grid-template-columns: 1fr; } .stat{ border-left:none; } .stat + .stat{ border-top:1px solid var(--line-soft); } }
+  .stat .num{ font-family: var(--font-display); font-weight:500; font-size: clamp(2rem, 4vw, 2.9rem); line-height:1; font-variant-numeric: tabular-nums; }
+  .stat .num .suf{ font-size: 0.55em; color: var(--star); margin-left:2px; }
+  .stat .cap{ margin-top: 12px; font-size: 0.88rem; color: var(--ink-muted); line-height:1.5; max-width: 22ch; }
+
+  /* SECTIONS */
+  .band{ padding: clamp(56px, 8vw, 96px) 0; }
+  .band + .band{ border-top: 1px solid var(--line-soft); }
+  .section-head{ display:flex; align-items:baseline; gap:16px; margin-bottom: 30px; }
+  .section-head .idx{ font-family: var(--font-mono); font-size:0.8rem; color: var(--sky-dim); letter-spacing:0.1em; }
+  h2.section-title{ font-family: var(--font-display); font-weight: 400; font-size: clamp(1.6rem, 3.2vw, 2.3rem); line-height:1.1; letter-spacing:-0.015em; }
+  h2.section-title em{ font-style:normal; color: var(--star); }
+  .prose p{ color: var(--ink-muted); font-size: 1.05rem; margin-bottom: 1.1em; max-width: 62ch; }
+  .prose p:last-child{ margin-bottom: 0; }
+  .prose strong{ color: var(--ink); font-weight: 600; }
+
+  /* FEATURE LIST */
+  .feats{ border-top:1px solid var(--line-soft); margin-top: 8px; }
+  .feat{ display:grid; grid-template-columns: 230px 1fr; gap: 24px; padding: 20px 0; border-bottom:1px solid var(--line-soft); align-items:baseline; }
+  @media (max-width: 640px){ .feat{ grid-template-columns:1fr; gap:6px; } }
+  .feat .fname{ font-weight:600; font-size:1.02rem; color:var(--ink); }
+  .feat .fdesc{ color:var(--ink-muted); font-size:0.98rem; line-height:1.65; max-width: 62ch; }
+
+  /* DECISIONES */
+  .decision{ border-left: 2px solid var(--line); padding: 4px 0 4px 26px; margin-bottom: 34px; }
+  .decision:last-child{ margin-bottom: 0; }
+  .decision h3{ font-family: var(--font-display); font-weight: 500; font-size: 1.3rem; line-height: 1.25; margin-bottom: 10px; }
+  .decision h3 .n{ font-family: var(--font-mono); font-size: 0.78rem; color: var(--sky-dim); margin-right: 10px; letter-spacing: 0.08em; }
+  .decision p{ color: var(--ink-muted); font-size: 1.02rem; max-width: 62ch; }
+
+  /* STACK */
+  .stack-tags{ display:flex; flex-wrap:wrap; gap:8px; }
+  .stack-tags span{ font-family:var(--font-mono); font-size:0.76rem; color:var(--ink-muted); border:1px solid var(--line); padding:6px 12px; border-radius:2px; }
+
+  /* PRIVACIDAD */
+  .privacy{ border:1px solid var(--line); border-radius:4px; background: var(--night-0); padding: clamp(22px, 3.5vw, 34px); max-width: 780px; }
+  .privacy .kicker{ color: var(--star); }
+  .privacy p{ margin-top: 12px; color: var(--ink-muted); font-size: 0.98rem; max-width: 66ch; }
+
+  /* CTA */
+  .cta{ text-align:center; background: var(--night-0); border-top:1px solid var(--line-soft); }
+  .cta h2{ font-family:var(--font-display); font-weight:400; font-size: clamp(1.9rem, 4.5vw, 3rem); letter-spacing:-0.02em; }
+  .cta h2 em{ font-style:normal; color:var(--star); }
+  .cta p{ color:var(--ink-muted); margin: 18px auto 32px; max-width: 46ch; }
+  .btn{
+    display:inline-flex; align-items:center; gap:9px;
+    font-size: 0.85rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+    padding: 14px 26px; border-radius: 2px; cursor:pointer;
+    background: var(--star); color: var(--night-0);
+    transition: background 0.2s;
+  }
+  .btn:hover{ background: var(--star-deep); }
+  .btn svg{ width:16px; height:16px; }
+  .cta-links{ margin-top: 34px; display:flex; gap: 28px; justify-content:center; flex-wrap:wrap; font-family:var(--font-mono); font-size:0.82rem; }
+  .cta-links a{ color:var(--ink-muted); display:flex; align-items:center; gap:8px; transition:color 0.2s; }
+  .cta-links a:hover{ color:var(--star); }
+  .cta-links a svg{ width:16px; height:16px; }
+
+  footer.foot{ border-top:1px solid var(--line-soft); padding: 30px 0; }
+  .foot-inner{ display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; font-family:var(--font-mono); font-size:0.72rem; color:var(--ink-faint); letter-spacing:0.03em; }
+
+  .reveal{ opacity:0; transform: translateY(22px); transition: opacity 0.9s var(--ease), transform 0.9s var(--ease); }
+  .reveal.in{ opacity:1; transform:none; }
+  @media (prefers-reduced-motion: reduce){
+    *{ animation:none !important; scroll-behavior:auto; }
+    .reveal{ opacity:1; transform:none; transition:none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="nav" id="nav">
+  <div class="wrap nav-inner">
+    <a href="index.html" class="brand">Joaquín Rao</a>
+    <a href="index.html#trabajo" class="nav-back">← Volver a los proyectos</a>
+  </div>
+</header>
+
+<!-- HEADER -->
+<section class="case-head">
+  <div class="wrap">
+    <div class="kicker reveal in"><span class="rule"></span><span>Caso de estudio · Sistema en producción</span></div>
+    <h1 class="case-title reveal in">Un CRM a medida para una <em>distribuidora veterinaria</em></h1>
+    <p class="case-lead reveal in">Centraliza la base de clientes, la geolocaliza y arma las rutas de reparto con tráfico real — reemplazando planillas dispersas por un sistema único, privado y con memoria. Lo construí para RAOVET, la distribuidora donde trabajo, y se usa todos los días.</p>
+    <div class="case-meta reveal in">
+      <span><span class="d"></span>2026 · en uso diario</span>
+      <span><span class="d"></span>Next.js · TypeScript · PostgreSQL</span>
+      <span><span class="d"></span>Repo privado (datos reales)</span>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<section class="stats" aria-label="En números">
+  <div class="wrap" style="padding:0">
+    <div class="stats-grid">
+      <div class="stat reveal"><div class="num">400<span class="suf">+</span></div><div class="cap">clientes activos gestionados</div></div>
+      <div class="stat reveal"><div class="num">3</div><div class="cap">fuentes de datos unificadas</div></div>
+      <div class="stat reveal"><div class="num">60</div><div class="cap">tests automáticos + CI en cada push</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- PROBLEMA -->
+<section class="band">
+  <div class="wrap read">
+    <div class="section-head reveal"><span class="idx">01</span><h2 class="section-title">El problema</h2></div>
+    <div class="prose reveal">
+      <p>RAOVET es una distribuidora mayorista que le vende insumos a veterinarias y clínicas. Su información de clientes vivía repartida en <strong>tres fuentes que no se cruzaban entre sí</strong>: una agenda de contactos, una base comprada y el propio sistema de facturación. No había forma simple de responder preguntas básicas del día a día — ¿quién es un cliente activo?, ¿dónde está?, ¿a quién le toca reparto hoy y en qué orden conviene ir?</p>
+      <p>Antes de tocar código armé un pipeline de datos aparte para unificar <strong>más de 17.000 contactos</strong> de esas tres fuentes en una base curada de más de 400 clientes activos: deduplicación, normalización de teléfonos, segmentación por zona y por recencia de contacto. Ese trabajo fue el insumo; el CRM es lo que construí encima.</p>
+    </div>
+  </div>
+</section>
+
+<!-- LO QUE CONSTRUI -->
+<section class="band">
+  <div class="wrap read">
+    <div class="section-head reveal"><span class="idx">02</span><h2 class="section-title">Lo que construí</h2></div>
+    <div class="prose reveal">
+      <p>Un sistema privado (login propio, sin acceso público, no indexado) que centraliza esa base y la vuelve operable:</p>
+    </div>
+    <div class="feats reveal">
+      <div class="feat"><div class="fname">Ficha de cliente editable</div><div class="fdesc">Con la regla de que lo cargado a mano nunca se pisa: reimportar la planilla original solo agrega clientes nuevos, nunca borra ni sobrescribe una edición.</div></div>
+      <div class="feat"><div class="fname">Mapa y ruteo de reparto</div><div class="fdesc">Rutas con tráfico real (Google Routes API) que respetan la ventana horaria de atención de cada cliente — con un heurístico de ruteo propio, porque el optimizador nativo de Google ignora esas ventanas.</div></div>
+      <div class="feat"><div class="fname">Avisos de clientes "de paso"</div><div class="fdesc">Al armar una ruta, el sistema sugiere a qué otros clientes avisarles por WhatsApp que el reparto pasa cerca de su zona.</div></div>
+      <div class="feat"><div class="fname">Formulario público de alta</div><div class="fdesc">Un cliente potencial carga sus propios datos sin necesitar una cuenta. Entra a una cola de revisión — nunca se activa solo.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- DECISIONES DE DATOS -->
+<section class="band">
+  <div class="wrap read">
+    <div class="section-head reveal"><span class="idx">03</span><h2 class="section-title">Las decisiones de datos <em>que importaron</em></h2></div>
+    <div class="prose reveal" style="margin-bottom:36px">
+      <p>Esta es la parte que más se parece a un trabajo de analista, no solo de desarrollador:</p>
+    </div>
+    <div class="decision reveal">
+      <h3><span class="n">3.1</span>El CUIT no es un identificador único</h3>
+      <p>Un mismo CUIT puede corresponder a varios clientes distintos — distintas veterinarias de un mismo hospital, o varias sucursales, cada una con su propio contacto. Asumir "un CUIT = un cliente" (el atajo obvio) hubiera fusionado registros que en la operación real son personas distintas. La deduplicación se diseñó respetando eso.</p>
+    </div>
+    <div class="decision reveal">
+      <h3><span class="n">3.2</span>El teléfono canónico no era obvio</h3>
+      <p>La planilla original traía dos columnas de WhatsApp por cliente y un campo de estado (<code>ok</code> / <code>cambiar</code> / <code>no</code>) que decía cuál de las dos confiar. La regla de negocio no se adivinó: se confirmó antes de escribir una sola línea de normalización, porque equivocarse ahí significa mandarle un mensaje al número viejo de un cliente real.</p>
+    </div>
+    <div class="decision reveal">
+      <h3><span class="n">3.3</span>Un CUIT o un DNI, según quién completa el formulario</h3>
+      <p>El alta pública la puede llenar cualquiera, y no todos tienen el CUIT a mano. En vez de forzar un solo formato, el campo deja elegir cuál se está cargando (con los guiones del CUIT puestos automáticamente al tipear) y por dentro normaliza los dos a una forma común, distinguible sin ambigüedad — sin duplicar la lógica de validación en dos caminos distintos.</p>
+    </div>
+    <div class="decision reveal">
+      <h3><span class="n">3.4</span>Aviso de duplicados, sin auto-fusionar</h3>
+      <p>Cuando alguien nuevo entra por el formulario público, si comparte CUIT, WhatsApp o nombre exacto con un cliente que ya existe, se avisa en su ficha antes de confirmarlo — nunca se fusiona solo, porque un duplicado real y dos clientes legítimos con el mismo CUIT pueden verse exactamente igual desde el dato.</p>
+    </div>
+  </div>
+</section>
+
+<!-- INGENIERIA -->
+<section class="band">
+  <div class="wrap read">
+    <div class="section-head reveal"><span class="idx">04</span><h2 class="section-title">Ingeniería y confiabilidad</h2></div>
+    <div class="feats reveal">
+      <div class="feat"><div class="fname">Ruteo propio</div><div class="fdesc">El orden de las paradas lo calcula un heurístico propio que respeta ventanas horarias, espera y casos infactibles — no el optimizador genérico de Google, que las ignora.</div></div>
+      <div class="feat"><div class="fname">Freno de costos en código</div><div class="fdesc">Las llamadas a Google Maps cuestan plata real. Hay un tope diario contado por elementos facturables (no por request) y un tope de paradas por ruta, para que un uso descontrolado no termine en una factura sorpresa.</div></div>
+      <div class="feat"><div class="fname">Defensa en profundidad</div><div class="fdesc">Cada Server Action valida su propia sesión y rol, sin depender solo del middleware — son endpoints direccionables por su cuenta, no solo rutas protegidas por el gate de navegación.</div></div>
+      <div class="feat"><div class="fname">Calidad verificable</div><div class="fdesc">60 tests automáticos (Vitest) sobre la lógica de negocio pura — el heurístico de ruteo y las normalizaciones, incluido el CUIT con el algoritmo módulo-11 real de AFIP. CI en cada push (lint, tipos, tests, build) y backup diario de la base con retención de 30 días.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ESTADO -->
+<section class="band">
+  <div class="wrap read">
+    <div class="section-head reveal"><span class="idx">05</span><h2 class="section-title">Estado y próximo paso</h2></div>
+    <div class="prose reveal">
+      <p>El CRM gestiona hoy la identidad y la logística de cada cliente. El próximo hito es sumar el sistema de facturación de la empresa — cruzando por el CUIT ya normalizado, con la misma regla de nunca pisar una edición manual — para ver también cuánto compra cada cliente, cada cuánto, y si tiene saldo pendiente.</p>
+    </div>
+    <div style="margin-top:36px" class="reveal">
+      <div class="kicker" style="margin-bottom:14px">Stack</div>
+      <div class="stack-tags">
+        <span>Next.js 16</span><span>TypeScript</span><span>Prisma</span><span>PostgreSQL (Neon)</span><span>Auth.js v5</span><span>Tailwind</span><span>Leaflet</span><span>Google Maps Platform</span><span>Zod</span><span>Vitest</span><span>GitHub Actions</span>
+      </div>
+    </div>
+    <div style="margin-top:44px" class="reveal">
+      <div class="privacy">
+        <div class="kicker">Sobre el código y los datos</div>
+        <p>El repositorio es privado: el sistema gestiona datos reales de clientes, así que ni el código ni la base son públicos. Si te interesa ver más — capturas sin datos sensibles, el detalle de alguna decisión o el README completo — escribime y te lo muestro.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="band cta">
+  <div class="wrap">
+    <div class="reveal">
+      <h2>¿Querés ver <em>cómo lo pensé</em>?</h2>
+      <p>Puedo mostrarte el detalle de cualquier decisión de este caso, con capturas y sin datos sensibles.</p>
+      <a class="btn" href="https://wa.me/5491133905237" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21 5.46 0 9.91-4.45 9.91-9.91C21.95 6.45 17.5 2 12.04 2m5.8 14.09c-.24.68-1.42 1.31-1.96 1.35-.5.04-.5.4-3.16-.66-2.66-1.05-4.32-3.79-4.45-3.97-.13-.18-1.06-1.41-1.06-2.69 0-1.28.67-1.91.91-2.17.24-.26.53-.33.71-.33.18 0 .35 0 .51.01.16.01.38-.06.6.46.24.56.79 1.94.86 2.08.07.14.12.31.02.49-.09.18-.14.3-.28.46-.14.16-.29.36-.42.48-.14.14-.28.29-.12.57.16.28.72 1.18 1.54 1.91 1.06.95 1.95 1.24 2.23 1.38.28.14.44.12.6-.07.16-.19.69-.81.87-1.08.18-.28.36-.23.6-.14.24.09 1.55.73 1.81.87.26.14.44.2.5.31.06.11.06.65-.18 1.32"/></svg>
+        Escribime por WhatsApp
+      </a>
+      <div class="cta-links">
+        <a href="mailto:joaquinrao@gmail.com"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="1"/><path d="M3 7l9 6 9-6"/></svg>joaquinrao@gmail.com</a>
+        <a href="https://www.linkedin.com/in/joaquin-rao" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2M9 17H6.5v-7H9zM7.7 8.7a1.4 1.4 0 110-2.8 1.4 1.4 0 010 2.8M18 17h-2.5v-3.9c0-.9 0-2.1-1.3-2.1s-1.5 1-1.5 2v4H10v-7h2.4v1h.03c.3-.6 1.1-1.3 2.3-1.3 2.5 0 3 1.6 3 3.7z"/></svg>in/joaquin-rao</a>
+        <a href="index.html#trabajo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Volver a los proyectos</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="foot">
+  <div class="wrap foot-inner">
+    <span>© 2026 Joaquín Rao · San Isidro, Buenos Aires</span>
+    <span>Diseñado y construido por mí, con datos y un poco de cielo.</span>
+  </div>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var nav = document.getElementById("nav");
+  function onScroll(){ nav.classList.toggle("scrolled", window.scrollY > 12); }
+  onScroll(); window.addEventListener("scroll", onScroll, {passive:true});
+
+  var revs = document.querySelectorAll(".reveal:not(.in)");
+  if("IntersectionObserver" in window && !reduced){
+    var ro = new IntersectionObserver(function(es){
+      es.forEach(function(e){
+        if(e.isIntersecting){ e.target.classList.add("in"); ro.unobserve(e.target); }
+      });
+    }, {threshold:0.14, rootMargin:"0px 0px -8% 0px"});
+    revs.forEach(function(el){ ro.observe(el); });
+  } else {
+    revs.forEach(function(el){ el.classList.add("in"); });
+  }
+})();
+</script>
+</body>
+</html>

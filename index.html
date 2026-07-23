@@ -196,13 +196,6 @@
   .sky-mini{ position:absolute; inset:0; }
   .sky-mini .grid-lines{ position:absolute; inset:0; opacity:0.5; }
 
-  /* hotel visual (calendar) */
-  .cal{ position:absolute; inset:0; display:grid; grid-template-columns:repeat(7,1fr); grid-template-rows: 22px repeat(4,1fr); gap:6px; padding:22px; }
-  .cal .h{ font-family:var(--font-mono); font-size:0.6rem; color:var(--ink-faint); text-align:center; }
-  .cal .c{ border:1px solid var(--line-soft); border-radius:2px; }
-  .cal .c.book{ background: color-mix(in oklab, var(--sky) 26%, transparent); border-color: var(--sky-dim); }
-  .cal .c.sel{ background: color-mix(in oklab, var(--star) 30%, transparent); border-color: var(--star); }
-
   /* pipeline visual */
   .pipe{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; gap:0; padding:22px; }
   .pipe .stage{ flex:1; text-align:center; }
@@ -353,7 +346,7 @@
     <div class="stats-grid">
       <div class="stat reveal"><div class="num" data-count="11000" data-suffix="+"><span class="v">0</span><span class="suf">+</span></div><div class="cap">contactos comerciales unificados en una sola base</div></div>
       <div class="stat reveal" data-delay="1"><div class="num" data-count="300" data-suffix="+"><span class="v">0</span><span class="suf">+</span></div><div class="cap">clientes/mes analizados en tableros de gestión</div></div>
-      <div class="stat reveal" data-delay="2"><div class="num" data-count="5" data-suffix=""><span class="v">0</span></div><div class="cap">proyectos publicados en GitHub</div></div>
+      <div class="stat reveal" data-delay="2"><div class="num" data-count="400" data-suffix="+"><span class="v">0</span><span class="suf">+</span></div><div class="cap">clientes activos gestionados en un CRM propio</div></div>
       <div class="stat reveal" data-delay="3"><div class="num" data-count="12" data-suffix=" años"><span class="v">0</span><span class="suf">&nbsp;años</span></div><div class="cap">de imágenes satelitales procesadas (2012–2024)</div></div>
     </div>
   </div>
@@ -368,7 +361,7 @@
     </div>
     <div class="about-grid">
       <div class="about-copy reveal">
-        <p>Soy Joaquín. Estudio Ciencia de Datos y trabajo en una distribuidora veterinaria, donde me tocó convertir el desorden en decisiones: <strong>unifiqué 11.000 contactos</strong> que estaban repartidos en tres sistemas distintos, armé los tableros que hoy usan para saber qué se vende y qué no, y digitalicé la facturación.</p>
+        <p>Soy Joaquín. Estudio Ciencia de Datos y trabajo en una distribuidora veterinaria, donde me tocó convertir el desorden en decisiones: <strong>unifiqué 11.000 contactos</strong> que estaban repartidos en tres sistemas distintos, armé los tableros que hoy usan para saber qué se vende y qué no, y digitalicé la facturación. Sobre esa base construí <strong>un CRM a medida</strong> que hoy se usa todos los días: más de 400 clientes activos geolocalizados y las rutas de reparto armadas según el horario real de cada uno.</p>
         <p>Lo que me diferencia no es la herramienta que uso: es <strong>cómo pienso tu negocio</strong> antes de tocar una línea de código. Qué priorizar, qué no hace falta, y por qué. Después te muestro el resultado funcionando, para que no me creas de palabra.</p>
         <p>Y cuando apago la compu, miro para arriba. De ahí nació <strong>StarMap</strong>: una app para encontrar los cielos más oscuros de la Provincia, y una predicción de cómo va a cambiar la contaminación lumínica de acá a 2035.</p>
         <p class="sign">Joaquín Rao</p>
@@ -392,6 +385,21 @@
       <h2 class="section-title">Lo que construí</h2>
     </div>
     <div class="projects">
+
+      <!-- CRM RAOVET -->
+      <article class="project reveal">
+        <div class="body">
+          <div class="tagline"><span>CRM a medida · en producción</span></div>
+          <h3>CRM RAOVET</h3>
+          <p class="desc">El sistema que la distribuidora usa todos los días: centraliza una base curada de más de 400 clientes activos, los geolocaliza y arma las rutas de reparto con tráfico real, respetando la ventana horaria de atención de cada cliente. Reemplazó a las planillas dispersas por un sistema único y con memoria.</p>
+          <div class="tags"><span>Next.js</span><span>TypeScript</span><span>Prisma + PostgreSQL</span><span>Google Routes API</span><span>Vitest + CI</span></div>
+          <a class="go" href="crm-raovet.html">Leer el caso de estudio <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H8M17 7v9"/></svg></a>
+        </div>
+        <div class="visual" data-visual="ruta">
+          <canvas class="ruta-canvas"></canvas>
+          <div class="vlabel"><span class="live">●</span> ruta del día · tráfico real</div>
+        </div>
+      </article>
 
       <!-- StarMap -->
       <article class="project reveal">
@@ -423,29 +431,12 @@
         </div>
       </article>
 
-      <!-- Hotel -->
-      <article class="project reveal">
-        <div class="body">
-          <div class="tagline"><span>Sistema de reservas</span></div>
-          <h3>Hotel Transitorio</h3>
-          <p class="desc">Reservas online de punta a punta: habitaciones, disponibilidad y turnos conectados en una base relacional, con panel para el dueño y confirmación automática. La misma base que uso para turnos de consultorios, peluquerías y canchas.</p>
-          <div class="tags"><span>Next.js</span><span>TypeScript</span><span>Prisma</span><span>SQLite</span></div>
-          <a class="go" href="https://github.com/jota1221-coder/Hotel-transitorio" target="_blank" rel="noopener">Ver el repo <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H8M17 7v9"/></svg></a>
-        </div>
-        <div class="visual" data-visual="hotel">
-          <div class="cal">
-            <div class="h">L</div><div class="h">M</div><div class="h">M</div><div class="h">J</div><div class="h">V</div><div class="h">S</div><div class="h">D</div>
-          </div>
-          <div class="vlabel">disponibilidad en vivo</div>
-        </div>
-      </article>
-
       <!-- Pipeline -->
       <article class="project reveal">
         <div class="body">
           <div class="tagline"><span>Ingeniería de datos</span></div>
           <h3>Pipeline de contactos RAOVET</h3>
-          <p class="desc">Un ETL en Python que unificó tres fuentes (sistema de facturación, contactos y una base externa) en una sola base viva de más de 11.000 contactos: sin duplicados, normalizada y segmentada para vender. De planilla caótica a activo comercial.</p>
+          <p class="desc">Un ETL en Python que unificó tres fuentes (sistema de facturación, contactos y una base externa) en una sola base viva de más de 11.000 contactos: sin duplicados, normalizada y segmentada para vender. De ahí salió la base curada de clientes activos que hoy gestiona el CRM.</p>
           <div class="tags"><span>Python</span><span>pandas</span><span>phonenumbers</span><span>ETL</span></div>
         </div>
         <div class="visual" data-visual="pipe">
@@ -745,13 +736,53 @@
     if(reduced){ build(); draw(1); } else addLoop(draw);
   })();
 
-  /* ---------- Hotel calendar fill ---------- */
+  /* ---------- CRM route (ruta de reparto) ---------- */
   (function(){
-    var cal = document.querySelector('[data-visual="hotel"] .cal');
-    if(!cal) return;
-    // 7 cols x 4 rows of cells after the 7 headers
-    var pattern = [0,1,1,0,2,2,0, 0,0,1,1,0,0,2, 2,0,0,1,1,1,0, 0,2,2,0,0,1,1];
-    for(var i=0;i<28;i++){ var c=document.createElement("div"); c.className="c"+(pattern[i]===1?" book":pattern[i]===2?" sel":""); cal.appendChild(c); }
+    var cv = document.querySelector(".ruta-canvas");
+    if(!cv) return;
+    var s=setupCanvas(cv), ctx=s.ctx, W=0,H=0, clientes=[], stops=[], segs=[], total=0, prog=0;
+    function build(){
+      var r=s.resize(); W=r.width; H=r.height;
+      clientes=[];
+      for(var i=0;i<34;i++){ clientes.push({x:W*(0.05+Math.random()*0.9), y:H*(0.07+Math.random()*0.86), rr:Math.random()*1.4+0.7, a:Math.random()*0.35+0.15}); }
+      // deposito + paradas del dia (vuelve al local al final)
+      var base={x:W*0.14,y:H*0.8};
+      var picks=[[0.3,0.6],[0.44,0.28],[0.62,0.16],[0.8,0.38],[0.7,0.66],[0.46,0.78]];
+      stops=[base];
+      for(var j=0;j<picks.length;j++){ stops.push({x:W*(picks[j][0]+(Math.random()-0.5)*0.05), y:H*(picks[j][1]+(Math.random()-0.5)*0.05)}); }
+      stops.push(base);
+      segs=[]; total=0; prog=0;
+      for(var k=0;k<stops.length-1;k++){ var dx=stops[k+1].x-stops[k].x, dy=stops[k+1].y-stops[k].y, L=Math.sqrt(dx*dx+dy*dy); segs.push(L); total+=L; }
+    }
+    build(); window.addEventListener("resize", build);
+    function pointAt(d){
+      for(var k=0;k<segs.length;k++){
+        if(d<=segs[k]){ var t=d/segs[k]; return {x:stops[k].x+(stops[k+1].x-stops[k].x)*t, y:stops[k].y+(stops[k+1].y-stops[k].y)*t}; }
+        d-=segs[k];
+      }
+      return stops[stops.length-1];
+    }
+    function draw(dt){
+      if(!inView(cv)) return;
+      ctx.clearRect(0,0,W,H);
+      // clientes de fondo
+      for(var i=0;i<clientes.length;i++){ var c=clientes[i]; ctx.beginPath(); ctx.arc(c.x,c.y,c.rr,0,6.28); ctx.fillStyle="oklch(90% 0.03 250 / "+c.a+")"; ctx.fill(); }
+      // ruta punteada
+      ctx.strokeStyle="oklch(74% 0.115 240 / 0.55)"; ctx.lineWidth=1.2; ctx.setLineDash([5,5]);
+      ctx.beginPath(); ctx.moveTo(stops[0].x,stops[0].y);
+      for(var k=1;k<stops.length;k++) ctx.lineTo(stops[k].x,stops[k].y);
+      ctx.stroke(); ctx.setLineDash([]);
+      // paradas
+      for(var k2=1;k2<stops.length-1;k2++){ var p=stops[k2]; ctx.beginPath(); ctx.arc(p.x,p.y,3,0,6.28); ctx.fillStyle="oklch(74% 0.115 240 / 0.95)"; ctx.fill(); }
+      // local (deposito)
+      ctx.fillStyle="oklch(83% 0.125 78)"; ctx.fillRect(stops[0].x-3.5, stops[0].y-3.5, 7, 7);
+      // reparto en movimiento
+      prog=(prog+dt*0.55)%total;
+      var m=pointAt(prog);
+      ctx.beginPath(); ctx.arc(m.x,m.y,3.4,0,6.28); ctx.fillStyle="oklch(83% 0.125 78)"; ctx.fill();
+      ctx.beginPath(); ctx.arc(m.x,m.y,7,0,6.28); ctx.strokeStyle="oklch(83% 0.125 78 / 0.35)"; ctx.lineWidth=1; ctx.stroke();
+    }
+    if(reduced){ build(); draw(1); } else addLoop(draw);
   })();
 
 })();
