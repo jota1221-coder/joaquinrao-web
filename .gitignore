@@ -5,6 +5,7 @@ desktop.ini
 
 # Editor
 .vscode/
+.claude/
 *.log
 
 # Vercel
