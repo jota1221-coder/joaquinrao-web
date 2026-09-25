@@ -281,38 +281,71 @@
   }
 
   /* ---------- ESTRELLA FUGAZ (scrollytelling) ----------
-     Una estrella que baja con el scroll haciendo zigzag de un costado al
-     otro, da una vuelta junto a cada título y lo pinta de dorado al
-     pasar. La maneja el scroll, no el tiempo: si volvés para arriba,
-     retrocede y despinta.
+     Una estrella que baja con el scroll. En cada título pasa por debajo
+     como un subrayado y lo va pintando justo donde está; en las grillas
+     (demos y "Cómo trabajo") recorre el borde de arriba y las líneas se
+     vuelven doradas a su paso. Suelta chispas mientras pinta y lo pintado
+     queda con brillantina.
 
-     Los títulos sólo se vuelven "pintables" si el JS arrancó (clase
-     .js-estrella en <html>): sin JS se ven como siempre, nunca
-     transparentes. */
+     La maneja el scroll, no el tiempo: si volvés para arriba, retrocede y
+     despinta. Todo lo pintable depende de la clase .js-estrella en <html>:
+     sin JS, los títulos y las grillas se ven exactamente como antes. */
+  :root{
+    /* Dorado brillante: no un solo tono sino un metal con reflejos. */
+    --oro-brillo: linear-gradient(100deg, #9c6b1f 0%, #e7b24a 14%, #fff2bd 24%, #f2c35a 34%, #b98526 48%,
+                  #f6cf6e 60%, #fff6d6 68%, #e3a83e 80%, #9c6b1f 100%);
+  }
   .estela{ position:absolute; top:0; left:0; pointer-events:none; z-index:60; overflow:hidden; }
-  .estela .rastro{ fill:none; stroke: var(--star); stroke-width:1; stroke-linecap:round; opacity:0.3; }
+  .estela .viaje{ fill:none; stroke: var(--star); stroke-width:1; stroke-linecap:round; opacity:0.22; }
+  .estela .pintura{ fill:none; stroke:url(#oro-estela); stroke-width:2.2; stroke-linecap:round;
+                    filter: drop-shadow(0 0 3px oklch(83% 0.125 78 / 0.55)); }
   .estela .cola line{ stroke: var(--star); stroke-linecap:round; }
-  /* Si la estrella se detiene arriba de un texto, el halo se apaga y
-     queda sólo el punto: nunca tapa lo que se está leyendo. */
   .estela .halo, .estela .cola{ transition: opacity 0.4s var(--ease); }
   .estela.discreta .halo{ opacity: 0.2; }
   .estela.discreta .cola{ opacity: 0; }
+  .estela .chispa{ fill: #fff3c4; }
+  /* Brillantina: puntitos sobre lo ya pintado que titilan cada uno a su ritmo. */
+  .estela .brillo{ fill:#fff6d6; opacity:0; transform-box: fill-box; transform-origin:center; }
+  .estela .brillo.on{ animation: titila var(--t,2.4s) ease-in-out var(--d,0s) infinite; }
+  @keyframes titila{ 0%,100%{ opacity:0; transform:scale(0.3); } 45%{ opacity:0.95; transform:scale(1); } 60%{ opacity:0.2; transform:scale(0.6); } }
 
+  /* Títulos: la capa de arriba tapa con el color normal lo que falta
+     pintar (--p va de 0 a 1 siguiendo a la estrella); abajo, el oro
+     con un reflejo que corre. */
   .js-estrella .pintable{
-    background-image: linear-gradient(90deg, var(--star) 0%, var(--star) 45%, var(--ink) 55%, var(--ink) 100%);
-    background-size: 225% 100%;
-    background-position: 100% 0;
+    --p: 0;
+    background-image:
+      linear-gradient(var(--dir, 90deg), transparent calc(var(--p) * 100%), var(--ink) calc(var(--p) * 100%)),
+      var(--oro-brillo);
+    background-size: 100% 100%, 260% 100%;
     -webkit-background-clip: text; background-clip: text;
     -webkit-text-fill-color: transparent;
-    transition: background-position 1.2s var(--ease);
+    animation: reflejo 3.2s linear infinite;
   }
-  .js-estrella .pintable.oro{ background-position: 0 0; }
-  /* Si la estrella viene de la derecha, el dorado entra por la derecha. */
-  .js-estrella .pintable.desde-der{
-    background-image: linear-gradient(90deg, var(--ink) 0%, var(--ink) 45%, var(--star) 55%, var(--star) 100%);
-    background-position: 0 0;
+  .js-estrella .pintable.desde-der{ --dir: 270deg; }
+  @keyframes reflejo{ from{ background-position: 0 0, 0% 0; } to{ background-position: 0 0, 100% 0; } }
+
+  /* Grillas: las líneas son el fondo que asoma entre las celdas (gap)
+     y el borde. Se reemplazan por oro, tapado por el gris de siempre en
+     la parte que la estrella todavía no recorrió. */
+  .js-estrella .caja-pintable{
+    --p: 0;
+    border-color: transparent;
+    background-image:
+      linear-gradient(90deg, transparent calc(var(--p) * 100%), var(--line-soft) calc(var(--p) * 100%)),
+      var(--oro-brillo);
+    background-size: 100% 100%, 260% 100%;
+    animation: reflejo 3.2s linear infinite;
   }
-  .js-estrella .pintable.desde-der.oro{ background-position: 100% 0; }
+  .js-estrella .caja-pintable.desde-der{
+    background-image:
+      linear-gradient(270deg, transparent calc(var(--p) * 100%), var(--line-soft) calc(var(--p) * 100%)),
+      var(--oro-brillo);
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .js-estrella .pintable, .js-estrella .caja-pintable{ animation:none; }
+  }
 </style>
 </head>
 <body>
@@ -877,202 +910,365 @@
 </script>
 
 <script>
-/* Estrella fugaz — ver el comentario del CSS. Todo en vanilla y en una
-   sola capa SVG: el camino se calcula una vez (y de nuevo si cambia el
-   alto de la página) y en cada scroll sólo se mueve la cabeza. */
+/* Estrella fugaz — ver el comentario del CSS.
+   El camino es una lista de puntos con una "llave de scroll" cada uno: la
+   estrella está en el punto cuya llave coincide con scroll + 55% de la
+   pantalla. En los tramos de pintura la llave avanza mientras la altura
+   queda fija: así la estrella recorre el subrayado mientras el título
+   pasa por delante, en vez de cruzarlo de golpe. */
 (function(){
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
   var doc = document.documentElement;
   var NS = "http://www.w3.org/2000/svg";
-  var SEL = "h2.section-title, .demos-head h3, .how-cell h4, .contact h2";
-  var titulos = [].slice.call(document.querySelectorAll(SEL));
+  var ALTURA = 0.55;
+  var titulos = [].slice.call(document.querySelectorAll("h2.section-title, .demos-head h3, .contact h2"));
+  var cajas = [].slice.call(document.querySelectorAll(".demos-grid, .how-grid"));
   if (!titulos.length) return;
 
   doc.classList.add("js-estrella");
   titulos.forEach(function(t){ t.classList.add("pintable"); });
+  cajas.forEach(function(c){ c.classList.add("caja-pintable"); });
+  var celdasTit = [].slice.call(document.querySelectorAll(".how-cell h4"));
+  celdasTit.forEach(function(t){ t.classList.add("pintable"); });
 
   // ── La capa ─────────────────────────────────────────────────────
   var svg = document.createElementNS(NS, "svg");
   svg.setAttribute("class", "estela");
   svg.setAttribute("aria-hidden", "true");
   svg.innerHTML =
-    '<defs><radialGradient id="halo-estrella">' +
-      '<stop offset="0" stop-color="oklch(95% 0.06 85)" stop-opacity="0.8"/>' +
-      '<stop offset="0.35" stop-color="oklch(83% 0.125 78)" stop-opacity="0.3"/>' +
-      '<stop offset="1" stop-color="oklch(83% 0.125 78)" stop-opacity="0"/>' +
-    '</radialGradient></defs>' +
-    '<path class="rastro"/><g class="cola"></g>' +
+    '<defs>' +
+      '<radialGradient id="halo-estrella">' +
+        '<stop offset="0" stop-color="oklch(96% 0.06 85)" stop-opacity="0.85"/>' +
+        '<stop offset="0.35" stop-color="oklch(83% 0.125 78)" stop-opacity="0.32"/>' +
+        '<stop offset="1" stop-color="oklch(83% 0.125 78)" stop-opacity="0"/>' +
+      '</radialGradient>' +
+      // Oro con reflejo que corre a lo largo de la línea pintada
+      '<linearGradient id="oro-estela" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="240" y2="0" spreadMethod="repeat">' +
+        '<stop offset="0" stop-color="#b98526"/><stop offset="0.3" stop-color="#f2c35a"/>' +
+        '<stop offset="0.45" stop-color="#fff6d6"/><stop offset="0.6" stop-color="#f2c35a"/>' +
+        '<stop offset="1" stop-color="#b98526"/>' +
+        '<animateTransform attributeName="gradientTransform" type="translate" from="0 0" to="240 0" dur="2.6s" repeatCount="indefinite"/>' +
+      '</linearGradient>' +
+    '</defs>' +
+    '<path class="viaje"/><g class="pinturas"></g><g class="brillos"></g><g class="cola"></g><g class="chispas"></g>' +
     '<g class="cabeza"><circle class="halo" r="12" fill="url(#halo-estrella)"/>' +
     '<circle r="2.6" fill="oklch(97% 0.03 85)"/></g>';
   document.body.appendChild(svg);
 
-  var rastro = svg.querySelector(".rastro");
+  var viaje = svg.querySelector(".viaje");
+  var pinturasG = svg.querySelector(".pinturas");
+  var brillosG = svg.querySelector(".brillos");
+  var chispasG = svg.querySelector(".chispas");
   var cabeza = svg.querySelector(".cabeza");
   var colaG = svg.querySelector(".cola");
-  var COLA = 14, PASO_COLA = 9;
-  var cola = [];
+  var COLA = 14, PASO_COLA = 9, cola = [];
   for (var k = 0; k < COLA; k++){
-    var l = document.createElementNS(NS, "line");
-    var f = 1 - k / COLA;
+    var l = document.createElementNS(NS, "line"), f = 1 - k / COLA;
     l.setAttribute("stroke-width", (2.6 * f + 0.3).toFixed(2));
     l.setAttribute("stroke-opacity", (0.85 * f * f).toFixed(3));
     colaG.appendChild(l); cola.push(l);
   }
 
+  // Posición sin el desplazamiento de la animación de entrada (.reveal
+  // arranca 22px más abajo): si no, el subrayado quedaría corrido.
+  function corrimiento(el){
+    var dy = 0;
+    for (var a = el; a && a !== document.body; a = a.parentElement){
+      var t = getComputedStyle(a).transform;
+      if (t && t !== "none") dy += new DOMMatrix(t).m42;
+    }
+    return dy;
+  }
+  function cajaDeTexto(el){
+    var r = document.createRange(); r.selectNodeContents(el);
+    var b = r.getBoundingClientRect(), dy = corrimiento(el);
+    return { x0: b.left + window.scrollX, x1: b.right + window.scrollX,
+             y: b.bottom + window.scrollY - dy, alto: b.height };
+  }
+  function cajaDe(el){
+    var b = el.getBoundingClientRect(), dy = corrimiento(el);
+    return { x0: b.left + window.scrollX, x1: b.right + window.scrollX, y: b.top + window.scrollY - dy };
+  }
+
+  // En las grillas la estrella va por la línea entre filas más cercana al
+  // centro, no por el borde de arriba: el título de la sección está pegado
+  // encima, y cuando le toca el turno a la grilla su borde de arriba ya se
+  // fue de la pantalla. Por el medio, se la ve pintar.
+  function lineaDelMedio(g){
+    var b = g.getBoundingClientRect(), dy = corrimiento(g), centro = b.top + b.height / 2, mejor = null;
+    [].forEach.call(g.children, function(c){
+      var r = c.getBoundingClientRect();
+      if (r.bottom < b.bottom - 4 && (mejor === null || Math.abs(r.bottom - centro) < Math.abs(mejor - centro))) mejor = r.bottom;
+    });
+    return (mejor === null ? b.top : mejor + 1) + window.scrollY - dy;
+  }
+
   // ── El camino ───────────────────────────────────────────────────
-  var pts = [], acc = [], total = 0, yIni = 0, yFin = 1;
-  var ALTURA = 0.55; // la estrella vive al 55% de la pantalla
+  var pts = [];           // [x, y, llave]
+  var largos = [];        // largo acumulado
+  var tramos = [];        // tramos de pintura
+  var brillos = [];       // puntitos de brillantina
+  var total = 0, W = 0;
 
   function construir(){
-    var W = doc.clientWidth, H = doc.scrollHeight, vh = window.innerHeight;
+    W = doc.clientWidth;
+    var H = doc.scrollHeight, vh = window.innerHeight;
     svg.setAttribute("width", W); svg.setAttribute("height", H);
     svg.setAttribute("viewBox", "0 0 " + W + " " + H);
 
-    // Arranca donde está a scroll 0 y termina donde está al fondo: así el
-    // recorrido completo coincide con el scroll completo.
-    yIni = vh * ALTURA;
-    yFin = Math.max(yIni + 200, H - vh * (1 - ALTURA));
-    var D = yFin - yIni;
-
-    var R = Math.max(26, Math.min(64, W * 0.06));         // radio de las vueltas
-    // Donde "vive" la estrella: en pantallas anchas, en el medio del
-    // margen vacío a cada lado del contenido; si no hay margen, lo más
-    // afuera posible. Así cuando parás de scrollear no queda tapando texto.
-    var contenido = Math.min(W, 1160);
-    var margenVacio = (W - contenido) / 2;
-    // Sin margen vacío, la mitad del padding del contenido: el texto
-    // arranca en el padding, así que ahí la estrella no tapa nada.
+    var R = Math.max(22, Math.min(56, W * 0.05));
     var padding = Math.min(40, Math.max(20, W * 0.05));
+    var margenVacio = (W - Math.min(W, 1160)) / 2;
     var borde = margenVacio > R * 2 + 24 ? margenVacio / 2 : padding / 2;
-    var A = W / 2 - borde;                                 // amplitud del zigzag
-    var cruces = Math.max(3, Math.round(D / (vh * 0.85)));
 
-    // Una vuelta al lado de cada título, un poco antes de pintarlo.
-    var vueltas = titulos.map(function(t){
-      var r = t.getBoundingClientRect();
-      t._yc = r.top + window.scrollY + r.height / 2;
-      return (t._yc - 60 - yIni) / D;
-    }).filter(function(c){ return c > 0.01 && c < 0.99; });
-    var ancho = (R * 2.6) / D;
+    // Anclas en orden de aparición: títulos (subrayado) y cajas (borde).
+    var anclas = titulos.map(function(t){ var c = cajaDeTexto(t); return { el: t, tipo: "titulo", x0: c.x0, x1: c.x1, y: c.y + Math.max(5, c.alto * 0.1) }; })
+      .concat(cajas.map(function(c){ var b = cajaDe(c); return { el: c, tipo: "caja", x0: b.x0, x1: b.x1, y: lineaDelMedio(c) }; }))
+      .sort(function(a, b){ return a.y - b.y; });
 
-    var N = Math.max(600, Math.min(3200, Math.round(D / 3)));
-    pts = []; acc = []; total = 0;
-    for (var i = 0; i < N; i++){
-      var sP = i / (N - 1);
-      // Arranca por la derecha: ahí el hero tiene la constelación y la
-      // estrella en reposo no tapa ningún texto.
-      // Onda "cuadrada suave": se queda en los costados y cruza rápido por
-      // el medio, que es donde está el texto.
-      var onda = Math.sin(Math.PI * cruces * sP + Math.PI / 2);
-      var x = W / 2 + A * (onda < 0 ? -1 : 1) * Math.pow(Math.abs(onda), 0.25);
-      var y = yIni + sP * D;
-      for (var v = 0; v < vueltas.length; v++){
-        var d = (sP - vueltas[v]) / ancho;
-        if (d > -0.5 && d < 0.5){
-          var th = 2 * Math.PI * (d + 0.5);
-          var env = Math.sin(Math.PI * (d + 0.5));        // entra y sale suave
-          // El rulo se abre hacia el centro: pegada al borde, si se abriera
-          // hacia afuera se saldría de la pantalla.
+    var kIni = vh * ALTURA, kFin = Math.max(kIni + 400, H - vh * (1 - ALTURA));
+    pts = [];
+    var puntoEn = function(x, y, llave){ pts.push([Math.max(3, Math.min(W - 3, x)), y, llave]); };
+
+    // Arranque: a la derecha del hero, sobre la constelación.
+    var prev = { x: W - borde, y: kIni, k: kIni };
+    puntoEn(prev.x, prev.y, prev.k);
+    tramos = [];
+
+    anclas.forEach(function(a, i){
+      var derAIzq = i % 2 === 1;                       // alterna el sentido: zigzag
+      var ancho = a.x1 - a.x0;
+      var dur = Math.max(170, Math.min(420, ancho * 0.55));  // scroll que dura la pintura
+      // Centrada en el momento en que el título pasa por el 55% de la
+      // pantalla, pero sin pasarse del final del scroll: el último título
+      // está tan abajo que si no, nunca se terminaría de pintar.
+      var kInicio = Math.min(a.y - dur / 2, kFin - 30 - dur);
+      if (kInicio < prev.k + 60){ kInicio = prev.k + 60; dur = Math.max(80, Math.min(dur, kFin - 30 - kInicio)); }
+      var inicio = { x: derAIzq ? a.x1 : a.x0, y: a.y, k: kInicio };
+      var fin = { x: derAIzq ? a.x0 : a.x1, y: a.y, k: inicio.k + dur };
+
+      // Viaje hasta el comienzo de la pintura: una curva que se abre hacia
+      // el margen del lado de llegada, con un rulo a mitad de camino.
+      var lado = derAIzq ? W - borde : borde;
+      var n = Math.max(40, Math.round(Math.abs(inicio.y - prev.y) / 6));
+      for (var j = 1; j <= n; j++){
+        var t = j / n, u = 1 - t;
+        var c1x = prev.x + (lado - prev.x) * 0.9, c1y = prev.y + (inicio.y - prev.y) * 0.25;
+        var c2x = lado, c2y = inicio.y - Math.min(160, (inicio.y - prev.y) * 0.35);
+        var x = u*u*u*prev.x + 3*u*u*t*c1x + 3*u*t*t*c2x + t*t*t*inicio.x;
+        var y = u*u*u*prev.y + 3*u*u*t*c1y + 3*u*t*t*c2y + t*t*t*inicio.y;
+        var d = (t - 0.5) / 0.22;                      // el rulo
+        if (d > -0.5 && d < 0.5 && inicio.y - prev.y > R * 4){
+          var th = 2 * Math.PI * (d + 0.5), env = Math.sin(Math.PI * (d + 0.5));
           var adentro = x < W / 2 ? 1 : -1;
           x += adentro * R * env * (1 - Math.cos(th));
           y -= R * env * Math.sin(th) * 0.9;
         }
+        puntoEn(x, y, prev.k + (inicio.k - prev.k) * t);
       }
-      x = Math.max(4, Math.min(W - 4, x));
-      if (i) total += Math.hypot(x - pts[i-1][0], y - pts[i-1][1]);
-      pts.push([x, y]); acc.push(total);
+
+      // La pintura: una línea recta bajo el título o sobre el borde de la caja.
+      var desde = pts.length - 1;
+      var m = Math.max(12, Math.round(ancho / 5));
+      for (var q = 1; q <= m; q++){
+        var tq = q / m;
+        puntoEn(inicio.x + (fin.x - inicio.x) * tq, a.y, inicio.k + (fin.k - inicio.k) * tq);
+      }
+      tramos.push({ ancla: a, desde: desde, hasta: pts.length - 1, derAIzq: derAIzq, kIni: inicio.k, kFin: fin.k });
+      a.el.classList.toggle("desde-der", derAIzq);
+      prev = fin;
+    });
+
+    // Cierre: se va hacia el costado mientras termina la página.
+    var ult = prev, lado2 = ult.x < W / 2 ? W - borde : borde;
+    for (var z = 1; z <= 30; z++){
+      var tz = z / 30;
+      puntoEn(ult.x + (lado2 - ult.x) * tz, ult.y + 120 * tz, ult.k + (Math.max(ult.k + 1, kFin) - ult.k) * tz);
     }
-    rastro.setAttribute("d", "M" + pts.map(function(q){ return q[0].toFixed(1) + " " + q[1].toFixed(1); }).join("L"));
-    rastro.style.strokeDasharray = total.toFixed(1);
+
+    // Largos acumulados
+    largos = [0]; total = 0;
+    for (var i2 = 1; i2 < pts.length; i2++){
+      total += Math.hypot(pts[i2][0] - pts[i2-1][0], pts[i2][1] - pts[i2-1][1]);
+      largos.push(total);
+    }
+    viaje.setAttribute("d", "M" + pts.map(function(q2){ return q2[0].toFixed(1) + " " + q2[1].toFixed(1); }).join("L"));
+    viaje.style.strokeDasharray = total.toFixed(1);
+
+    // Un trazo dorado por tramo de pintura, y su brillantina
+    pinturasG.innerHTML = ""; brillosG.innerHTML = ""; brillos = [];
+    tramos.forEach(function(tr){
+      var seg = pts.slice(tr.desde, tr.hasta + 1);
+      var path = document.createElementNS(NS, "path");
+      path.setAttribute("class", "pintura");
+      path.setAttribute("d", "M" + seg.map(function(q3){ return q3[0].toFixed(1) + " " + q3[1].toFixed(1); }).join("L"));
+      pinturasG.appendChild(path);
+      tr.path = path;
+      tr.largo = Math.abs(seg[seg.length - 1][0] - seg[0][0]);
+      path.style.strokeDasharray = tr.largo.toFixed(1);
+      path.style.strokeDashoffset = tr.largo.toFixed(1);
+
+      for (var xb = 8; xb < tr.largo - 4; xb += 14 + Math.random() * 16){
+        var c = document.createElementNS(NS, "circle");
+        var xr = tr.derAIzq ? seg[0][0] - xb : seg[0][0] + xb;
+        c.setAttribute("cx", xr.toFixed(1));
+        c.setAttribute("cy", (tr.ancla.y + (Math.random() - 0.5) * 7).toFixed(1));
+        c.setAttribute("r", (0.7 + Math.random() * 1.1).toFixed(2));
+        c.setAttribute("class", "brillo");
+        c.style.setProperty("--d", (Math.random() * 2.4).toFixed(2) + "s");
+        c.style.setProperty("--t", (1.6 + Math.random() * 1.8).toFixed(2) + "s");
+        brillosG.appendChild(c);
+        brillos.push({ el: c, k: tr.kIni + (tr.kFin - tr.kIni) * (xb / tr.largo), on: false });
+      }
+    });
   }
 
-  // Punto a una distancia dada del inicio (búsqueda binaria sobre acc).
-  function enLargo(L){
-    if (L <= 0) return pts[0];
-    if (L >= total) return pts[pts.length - 1];
-    var lo = 0, hi = acc.length - 1;
-    while (hi - lo > 1){ var m = (lo + hi) >> 1; if (acc[m] < L) lo = m; else hi = m; }
-    var t = (L - acc[lo]) / ((acc[hi] - acc[lo]) || 1);
-    return [pts[lo][0] + (pts[hi][0] - pts[lo][0]) * t, pts[lo][1] + (pts[hi][1] - pts[lo][1]) * t];
+  // ── Posición según la llave ─────────────────────────────────────
+  function indicePorLlave(K){
+    if (K <= pts[0][2]) return 0;
+    var n = pts.length - 1;
+    if (K >= pts[n][2]) return n;
+    var lo = 0, hi = n;
+    while (hi - lo > 1){ var m = (lo + hi) >> 1; if (pts[m][2] < K) lo = m; else hi = m; }
+    return lo + (K - pts[lo][2]) / ((pts[hi][2] - pts[lo][2]) || 1);
+  }
+  function puntoEnIndice(f){
+    var i = Math.floor(f), t = f - i;
+    if (i >= pts.length - 1) return pts[pts.length - 1];
+    return [pts[i][0] + (pts[i+1][0] - pts[i][0]) * t, pts[i][1] + (pts[i+1][1] - pts[i][1]) * t];
+  }
+  function largoEnIndice(f){
+    var i = Math.floor(f);
+    if (i >= largos.length - 1) return total;
+    return largos[i] + (largos[i+1] - largos[i]) * (f - i);
+  }
+  function indicePorLargo(L){
+    if (L <= 0) return 0;
+    var lo = 0, hi = largos.length - 1;
+    if (L >= total) return hi;
+    while (hi - lo > 1){ var m = (lo + hi) >> 1; if (largos[m] < L) lo = m; else hi = m; }
+    return lo + (L - largos[lo]) / ((largos[hi] - largos[lo]) || 1);
   }
 
-  function largoObjetivo(){
-    var y = window.scrollY + window.innerHeight * ALTURA;
-    var sP = Math.max(0, Math.min(1, (y - yIni) / (yFin - yIni)));
-    var f = sP * (pts.length - 1), i = Math.floor(f);
-    if (i >= pts.length - 1) return total;
-    return acc[i] + (acc[i+1] - acc[i]) * (f - i);
+  // ── Chispas: salen de la estrella mientras pinta ────────────────
+  var chispas = [], chispasCorriendo = false;
+  function soltarChispas(x, y, cuantas){
+    for (var c = 0; c < cuantas && chispas.length < 70; c++){
+      var el = document.createElementNS(NS, "path");
+      var r = 1.6 + Math.random() * 2.4;
+      el.setAttribute("d", "M0 " + (-r) + "L" + (r*0.22) + " " + (-r*0.22) + "L" + r + " 0L" + (r*0.22) + " " + (r*0.22) +
+                           "L0 " + r + "L" + (-r*0.22) + " " + (r*0.22) + "L" + (-r) + " 0L" + (-r*0.22) + " " + (-r*0.22) + "Z");
+      el.setAttribute("class", "chispa");
+      chispasG.appendChild(el);
+      chispas.push({ el: el, x: x, y: y, vx: (Math.random() - 0.5) * 1.6, vy: -0.6 - Math.random() * 1.4,
+                     vida: 0, dura: 520 + Math.random() * 480, giro: Math.random() * 90 });
+    }
+    if (!chispasCorriendo){ chispasCorriendo = true; ultimo = performance.now(); requestAnimationFrame(moverChispas); }
+  }
+  var ultimo = 0;
+  function moverChispas(ahora){
+    var dt = Math.min(40, ahora - ultimo); ultimo = ahora;
+    for (var i = chispas.length - 1; i >= 0; i--){
+      var c = chispas[i];
+      c.vida += dt; c.vy += 0.0045 * dt; c.x += c.vx * dt * 0.06; c.y += c.vy * dt * 0.06; c.giro += dt * 0.25;
+      var t = c.vida / c.dura;
+      if (t >= 1){ c.el.remove(); chispas.splice(i, 1); continue; }
+      c.el.setAttribute("transform", "translate(" + c.x.toFixed(1) + " " + c.y.toFixed(1) + ") rotate(" + c.giro.toFixed(0) + ") scale(" + (1 - t * 0.7).toFixed(2) + ")");
+      c.el.setAttribute("opacity", (1 - t).toFixed(2));
+    }
+    if (chispas.length) requestAnimationFrame(moverChispas); else chispasCorriendo = false;
   }
 
   // ── Dibujar ─────────────────────────────────────────────────────
-  var actual = 0, objetivo = 0, corriendo = false;
+  var actual = 0, objetivo = 0, corriendo = false, anterior = null;
 
-  function dibujar(L){
-    var p = enLargo(L);
+  function dibujar(f, conChispas){
+    var p = puntoEnIndice(f), L = largoEnIndice(f), K = pts[0][2];
+    // la llave actual, interpolada
+    var i = Math.floor(f);
+    K = i >= pts.length - 1 ? pts[pts.length - 1][2] : pts[i][2] + (pts[i+1][2] - pts[i][2]) * (f - i);
+
     cabeza.setAttribute("transform", "translate(" + p[0].toFixed(1) + " " + p[1].toFixed(1) + ")");
-    rastro.style.strokeDashoffset = (total - L).toFixed(1);
+    viaje.style.strokeDashoffset = (total - L).toFixed(1);
 
     var prev = p;
-    for (var k = 0; k < COLA; k++){
-      var q = enLargo(L - (k + 1) * PASO_COLA);
-      cola[k].setAttribute("x1", prev[0]); cola[k].setAttribute("y1", prev[1]);
-      cola[k].setAttribute("x2", q[0]); cola[k].setAttribute("y2", q[1]);
+    for (var c = 0; c < COLA; c++){
+      var q = puntoEnIndice(indicePorLargo(L - (c + 1) * PASO_COLA));
+      cola[c].setAttribute("x1", prev[0]); cola[c].setAttribute("y1", prev[1]);
+      cola[c].setAttribute("x2", q[0]); cola[c].setAttribute("y2", q[1]);
       prev = q;
     }
 
-    // Hacia dónde viaja ahora: define de qué lado entra el dorado.
-    var atras = enLargo(L - 24);
-    var haciaDer = p[0] >= atras[0];
-    for (var i = 0; i < titulos.length; i++){
-      var t = titulos[i];
-      var pasada = p[1] >= t._yc;
-      if (pasada && !t.classList.contains("oro")){
-        t.classList.toggle("desde-der", !haciaDer);
-        // Un cuadro después, para que el cambio de lado no anime al revés.
-        requestAnimationFrame(function(el){ return function(){ el.classList.add("oro"); }; }(t));
-      } else if (!pasada && t.classList.contains("oro")){
-        t.classList.remove("oro");
+    var pintando = false;
+    tramos.forEach(function(tr){
+      var pr = Math.max(0, Math.min(1, (K - tr.kIni) / (tr.kFin - tr.kIni)));
+      if (pr > 0 && pr < 1) pintando = true;
+      tr.path.style.strokeDashoffset = (tr.largo * (1 - pr)).toFixed(1);
+      tr.ancla.el.style.setProperty("--p", pr.toFixed(4));
+
+      // En las cajas, los títulos de cada celda se pintan cuando la
+      // estrella pasa por arriba de su columna.
+      if (tr.ancla.tipo === "caja"){
+        var ax0 = tr.ancla.x0, ax1 = tr.ancla.x1;
+        tr.ancla.el.querySelectorAll(".how-cell h4").forEach(function(h){
+          var b = h.getBoundingClientRect(), x0 = b.left + window.scrollX, x1 = b.right + window.scrollX;
+          var xs = tr.derAIzq ? ax1 - pr * (ax1 - ax0) : ax0 + pr * (ax1 - ax0);
+          var ph = tr.derAIzq ? (x1 - xs) / (x1 - x0) : (xs - x0) / (x1 - x0);
+          h.classList.toggle("desde-der", tr.derAIzq);
+          h.style.setProperty("--p", Math.max(0, Math.min(1, ph)).toFixed(4));
+        });
       }
+    });
+
+    for (var b2 = 0; b2 < brillos.length; b2++){
+      var on = K >= brillos[b2].k;
+      if (on !== brillos[b2].on){ brillos[b2].on = on; brillos[b2].el.classList.toggle("on", on); }
     }
+
+    if (conChispas && pintando && anterior && Math.abs(anterior[0] - p[0]) > 0.5){
+      soltarChispas(p[0], p[1], 1 + Math.floor(Math.random() * 2));
+    }
+    anterior = p;
   }
 
   function tick(){
-    objetivo = largoObjetivo();
-    actual += (objetivo - actual) * 0.14;   // la estrella persigue al scroll, con inercia
-    if (Math.abs(objetivo - actual) < 0.5) actual = objetivo;
-    dibujar(actual);
-    if (actual !== objetivo) { svg.classList.remove("discreta"); requestAnimationFrame(tick); }
+    objetivo = indicePorLlave(window.scrollY + window.innerHeight * ALTURA);
+    actual += (objetivo - actual) * 0.14;
+    if (Math.abs(objetivo - actual) < 0.02) actual = objetivo;
+    dibujar(actual, true);
+    if (actual !== objetivo){ svg.classList.remove("discreta"); requestAnimationFrame(tick); }
     else { corriendo = false; revisarTexto(); }
-  }
-
-  var TEXTO = /^(P|H1|H2|H3|H4|LI|A|SPAN|DD|DT|BUTTON)$/;
-  function revisarTexto(){
-    var p = enLargo(actual);
-    var bajo = document.elementsFromPoint(p[0] - window.scrollX, p[1] - window.scrollY);
-    var tapa = bajo.some(function(el){
-      return !svg.contains(el) && TEXTO.test(el.tagName) && el.textContent.trim().length > 2;
-    });
-    svg.classList.toggle("discreta", tapa);
   }
   function despertar(){ if (!corriendo){ corriendo = true; requestAnimationFrame(tick); } }
 
-  // ── Arranque y recálculo ────────────────────────────────────────
-  function rehacer(){ construir(); actual = objetivo = largoObjetivo(); dibujar(actual); revisarTexto(); }
+  // Si se detiene sobre un texto, el halo se apaga: no tapa lo que se lee.
+  var TEXTO = /^(P|H1|H2|H3|H4|LI|A|SPAN|DD|DT|BUTTON)$/;
+  function revisarTexto(){
+    var p = puntoEnIndice(actual);
+    var bajo = document.elementsFromPoint(p[0] - window.scrollX, p[1] - window.scrollY);
+    svg.classList.toggle("discreta", bajo.some(function(el){
+      return !svg.contains(el) && TEXTO.test(el.tagName) && el.textContent.trim().length > 2;
+    }));
+  }
+
+  function rehacer(){
+    construir();
+    actual = objetivo = indicePorLlave(window.scrollY + window.innerHeight * ALTURA);
+    dibujar(actual, false); revisarTexto();
+  }
   rehacer();
   window.addEventListener("scroll", despertar, { passive: true });
 
-  // El alto de la página cambia cuando cargan las fuentes y las imágenes,
-  // y con el ancho de la ventana: el camino se rehace entero.
   var espera;
-  function mas_tarde(){ clearTimeout(espera); espera = setTimeout(rehacer, 150); }
-  window.addEventListener("resize", mas_tarde);
-  window.addEventListener("load", mas_tarde);
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(mas_tarde);
+  function masTarde(){ clearTimeout(espera); espera = setTimeout(rehacer, 150); }
+  window.addEventListener("resize", masTarde);
+  window.addEventListener("load", masTarde);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(masTarde);
   if ("ResizeObserver" in window){
     var ultimoAlto = doc.scrollHeight;
     new ResizeObserver(function(){
-      if (Math.abs(doc.scrollHeight - ultimoAlto) > 4){ ultimoAlto = doc.scrollHeight; mas_tarde(); }
+      if (Math.abs(doc.scrollHeight - ultimoAlto) > 4){ ultimoAlto = doc.scrollHeight; masTarde(); }
     }).observe(document.body);
   }
 })();
