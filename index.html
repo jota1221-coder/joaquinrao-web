@@ -235,6 +235,24 @@
   .how-cell h4{ font-family:var(--font-display); font-weight:500; font-size:1.4rem; margin:12px 0 10px; }
   .how-cell p{ color:var(--ink-muted); font-size:0.98rem; line-height:1.65; max-width:42ch; }
 
+  /* ---------- DEMOS QUE SE TOCAN ---------- */
+  .demos{ margin-top: clamp(40px,6vw,64px); padding-top: clamp(40px,6vw,64px); border-top:1px solid var(--line-soft); }
+  .demos-head{ display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:12px 32px; margin-bottom: 28px; }
+  .demos-head h3{ font-family:var(--font-display); font-weight:500; font-size: clamp(1.5rem, 3vw, 2rem); line-height:1.1; }
+  .demos-head p{ color:var(--ink-faint); font-size:0.95rem; max-width:46ch; line-height:1.6; }
+  .demos-grid{ display:grid; grid-template-columns: repeat(2, 1fr); gap: 2px; background: var(--line-soft); border:1px solid var(--line-soft); border-radius:4px; overflow:hidden; }
+  @media (max-width: 720px){ .demos-grid{ grid-template-columns:1fr; } }
+  .demo{ background: var(--night-0); padding: clamp(24px,3.5vw,34px); display:flex; flex-direction:column; transition: background 0.25s var(--ease); }
+  .demo:hover{ background: color-mix(in oklch, var(--night-0) 88%, var(--sky) 12%); }
+  .demo .kind{ font-family:var(--font-mono); font-size:0.72rem; letter-spacing:0.14em; text-transform:uppercase; color: var(--sky-dim); }
+  .demo h4{ font-family:var(--font-display); font-weight:500; font-size:1.35rem; line-height:1.15; margin:12px 0 10px; }
+  .demo h4 a{ color: var(--star); transition: color 0.2s; }
+  .demo h4 a:hover{ color: var(--star-deep); }
+  .demo p{ color:var(--ink-muted); font-size:0.97rem; line-height:1.65; max-width:44ch; }
+  .demo .go{ display:inline-flex; align-items:center; gap:8px; margin-top:auto; padding-top:20px; color:var(--sky); font-size:0.9rem; font-weight:500; }
+  .demo .go svg{ width:15px; height:15px; transition: transform 0.25s var(--ease); }
+  .demo .go:hover svg{ transform: translate(3px,-3px); }
+
   /* ---------- CONTACTO ---------- */
   .contact{ text-align:center; }
   .contact h2{ font-family:var(--font-display); font-weight:400; font-size: clamp(2.2rem, 6vw, 4rem); line-height:1.05; letter-spacing:-0.02em; }
@@ -451,6 +469,41 @@
         </div>
       </article>
 
+    </div>
+
+    <!-- Demos: todas de negocios ficticios. Las hechas para un negocio
+         real (Maccia, OG, Krauss) no van acá: usan su marca y su nombre. -->
+    <div class="demos">
+      <div class="demos-head reveal">
+        <h3>Demos que se tocan</h3>
+        <p>Negocios inventados, sistemas que funcionan de verdad. Abrilas desde el celular.</p>
+      </div>
+      <div class="demos-grid">
+        <article class="demo reveal">
+          <span class="kind">Datos · herramienta</span>
+          <h4><a href="https://muestras-datos.pages.dev/planilla" target="_blank" rel="noopener">Planilla ordenada sola</a></h4>
+          <p>Subís tu Excel y lo deja como una tabla de verdad: saca títulos y totales sueltos, separa lo que está junto, unifica repetidos y te devuelve el archivo ordenado. Se procesa en tu navegador: el archivo no se sube a ningún lado.</p>
+          <a class="go" href="https://muestras-datos.pages.dev/planilla" target="_blank" rel="noopener">Probarla <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H8M17 7v9"/></svg></a>
+        </article>
+        <article class="demo reveal">
+          <span class="kind">Turnos · sistema</span>
+          <h4><a href="https://muestras-turnos.pages.dev/consultorio" target="_blank" rel="noopener">Turnos online para un consultorio</a></h4>
+          <p>Reserva en cinco toques con una agenda real detrás: respeta el horario partido, cada tratamiento dura lo que dura y dos personas no pueden tomar el mismo horario.</p>
+          <a class="go" href="https://muestras-turnos.pages.dev/consultorio" target="_blank" rel="noopener">Reservar un turno de prueba <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H8M17 7v9"/></svg></a>
+        </article>
+        <article class="demo reveal">
+          <span class="kind">Web · vidriera</span>
+          <h4><a href="https://estilos-peluqueria.vercel.app" target="_blank" rel="noopener">Estilos para peluquerías y barberías</a></h4>
+          <p>Tres direcciones visuales distintas para un mismo rubro, para que el dueño elija la que va con su local antes de empezar.</p>
+          <a class="go" href="https://estilos-peluqueria.vercel.app" target="_blank" rel="noopener">Ver los estilos <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H8M17 7v9"/></svg></a>
+        </article>
+        <article class="demo reveal">
+          <span class="kind">Web · vidriera</span>
+          <h4><a href="https://estilos-estetica.vercel.app" target="_blank" rel="noopener">Estilos para estética y spa</a></h4>
+          <p>Spa, clínica de tratamientos y beauty bar: tres estilos armados a partir de sitios reales del rubro, no de plantillas.</p>
+          <a class="go" href="https://estilos-estetica.vercel.app" target="_blank" rel="noopener">Ver los estilos <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H8M17 7v9"/></svg></a>
+        </article>
+      </div>
     </div>
   </div>
 </section>
