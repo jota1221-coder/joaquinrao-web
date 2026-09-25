@@ -1220,16 +1220,34 @@
     puntoEn(prev.x, prev.y, prev.k);
     tramos = [];
 
+    // Cuándo se pinta cada cosa, pensado en dónde está en la PANTALLA:
+    // arranca cuando su línea entra por abajo y termina cuando llega a
+    // ~42% del alto, con todo todavía a la vista. (La llave es scroll +
+    // 55% del alto, así que la línea está en pantalla en y - llave + 55%.)
+    var ventanas = anclas.map(function(a){
+      // Las grillas terminan con su línea del medio a media pantalla: son
+      // altas (la de demos pasa los 500px) y si no, la fila de arriba ya
+      // queda debajo de la barra de navegación cuando termina de pintar.
+      var entra = a.tipo === "caja" ? 0.86 : 0.74;
+      var sale = a.tipo === "caja" ? 0.5 : 0.46;
+      return { a: a.y + (ALTURA - entra) * vh, b: a.y + (ALTURA - sale) * vh };
+    });
+    // Si dos ventanas se pisan (un título pegado arriba de su grilla), se
+    // ADELANTA la de arriba en vez de atrasar la de abajo: recorriendo de
+    // abajo para arriba, ninguna termina después de su momento ideal. Antes
+    // se atrasaba la grilla y terminaba de pintarse ya casi fuera de la
+    // pantalla.
+    var HUECO = 50, MINIMO = 120, limite = kFinPintura;
+    for (var v = ventanas.length - 1; v >= 0; v--){
+      ventanas[v].b = Math.min(ventanas[v].b, limite);
+      ventanas[v].a = Math.min(ventanas[v].a, ventanas[v].b - MINIMO);
+      limite = ventanas[v].a - HUECO;
+    }
+
     anclas.forEach(function(a, i){
       var derAIzq = i % 2 === 1;                       // alterna el sentido: zigzag
-      var ancho = a.x1 - a.x0;
-      var dur = Math.max(170, Math.min(420, ancho * 0.55));  // scroll que dura la pintura
-      // Centrada en el momento en que el título pasa por el 55% de la
-      // pantalla, pero sin pasarse del final del scroll: el último título
-      // está tan abajo que si no, nunca se terminaría de pintar.
-      // Se reserva el último tramo de scroll para el vuelo hasta la cruz.
-      var kInicio = Math.min(a.y - dur / 2, kFinPintura - dur);
-      if (kInicio < prev.k + 60){ kInicio = prev.k + 60; dur = Math.max(80, Math.min(dur, kFinPintura - kInicio)); }
+      var kInicio = Math.max(ventanas[i].a, prev.k + 40);
+      var dur = Math.max(80, ventanas[i].b - kInicio);
       var inicio = { x: derAIzq ? a.x1 : a.x0, y: a.y, k: kInicio };
       var fin = { x: derAIzq ? a.x0 : a.x1, y: a.y, k: inicio.k + dur };
 
@@ -1255,7 +1273,7 @@
 
       // La pintura: una línea recta bajo el título o sobre el borde de la caja.
       var desde = pts.length - 1;
-      var m = Math.max(12, Math.round(ancho / 5));
+      var m = Math.max(12, Math.round((a.x1 - a.x0) / 5));
       for (var q = 1; q <= m; q++){
         var tq = q / m;
         puntoEn(inicio.x + (fin.x - inicio.x) * tq, a.y, inicio.k + (fin.k - inicio.k) * tq);
