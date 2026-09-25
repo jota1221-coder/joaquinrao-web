@@ -22,7 +22,7 @@
 <meta name="twitter:image" content="https://joaquinrao.com.ar/og.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Work+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Newsreader:opsz,wght@6..72,600&family=Work+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root{
     --night-0: oklch(12% 0.02 265);
@@ -81,7 +81,10 @@
   }
   header.nav.scrolled{ border-bottom-color: var(--line-soft); }
   .nav-inner{ display:flex; align-items:center; justify-content:space-between; height: 68px; }
-  .brand{ font-family: var(--font-display); font-weight: 500; font-size: 1.15rem; letter-spacing: -0.01em; }
+  /* El nombre usa una serif distinta a la de los títulos: en el corte
+     chico de Fraunces la J termina en una gota grande que a 18px se ve
+     como una mancha. Newsreader está pensada para tamaños chicos. */
+  .brand{ font-family: "Newsreader", var(--font-display); font-weight: 600; font-size: 1.2rem; letter-spacing: -0.005em; }
   .nav-links{ display:flex; align-items:center; gap: clamp(18px, 3vw, 34px); }
   .nav-links a.link{ font-size: 0.9rem; color: var(--ink-muted); transition: color 0.2s; }
   .nav-links a.link:hover{ color: var(--ink); }
@@ -353,8 +356,10 @@
   /* La Cruz del Sur del final. Antes de llegar la estrella: líneas
      punteadas tenues y un hueco donde va Acrux. Cuando llega: las
      líneas se dibujan en oro y toda la constelación se enciende. */
+  /* La cruz va a la derecha del bloque de contacto; sólo si no hay lugar
+     al costado (celular) se abre este espacio debajo de los links. */
   .cruz-lugar{ height:0; }
-  .js-estrella .cruz-lugar{ height: 230px; margin-top: 36px; }
+  .js-estrella .cruz-lugar.abajo{ height: 230px; margin-top: 36px; }
   .estela .cruz .base{ stroke: oklch(74% 0.115 240 / 0.35); stroke-width:1; stroke-dasharray: 3 6; fill:none; }
   .estela .cruz .oro{ stroke:url(#oro-estela); stroke-width:1.8; fill:none; stroke-linecap:round;
                       filter: drop-shadow(0 0 4px oklch(83% 0.125 78 / 0.7)); }
@@ -1048,17 +1053,54 @@
   // pantallas anchas se suman los Punteros (α y β Centauri), que en el
   // cielo real señalan la cruz.
   var cruz = null, kCompleta = [0, 1], lineasOro = [];
+  // Hay lugar al costado si a la derecha de lo más ancho del bloque de
+  // contacto (el texto, el botón y los links; el título queda arriba)
+  // entra la cruz con los Punteros.
+  function zonaAlCostado(){
+    var titulo = document.querySelector(".contact h2");
+    if (!titulo) return null;
+    // Los links son un flex de ancho completo: se miden de a uno, no la fila.
+    var piezas = [].slice.call(document.querySelectorAll(".contact p.csub, .contact .btn, .contact-links > a"));
+    if (!piezas.length) return null;
+    var der = 0, arriba = Infinity, abajo = 0;
+    piezas.forEach(function(el){
+      var r = el.getBoundingClientRect();
+      der = Math.max(der, r.right); arriba = Math.min(arriba, r.top); abajo = Math.max(abajo, r.bottom);
+    });
+    var dy = corrimiento(titulo);
+    var x0 = der + 48, x1 = doc.clientWidth - 28;
+    return { x0: x0, x1: x1, ancho: x1 - x0, y0: arriba + window.scrollY - dy, y1: abajo + window.scrollY - dy };
+  }
+  function lugarAlCostado(){
+    var z = zonaAlCostado();
+    return !!z && z.ancho >= 280 && doc.clientWidth >= 1000;
+  }
+
   function construirCruz(){
     cruzG.innerHTML = ""; lineasOro = [];
-    var b = lugarCruz.getBoundingClientRect(), dy = corrimiento(lugarCruz);
-    var cx = W / 2, cy = b.top + window.scrollY - dy + b.height / 2, u = Math.min(90, b.height * 0.4);
+    var cx, cy, u, conPunteros;
+    var z = zonaAlCostado();
+    if (z && !lugarCruz.classList.contains("abajo")){
+      // Al costado: la figura (de los Punteros a δ Crucis) mide ~3,1u de
+      // ancho y su centro visual está corrido 0,84u a la izquierda.
+      conPunteros = z.ancho / 3.4 >= 55;
+      u = Math.min(90, conPunteros ? z.ancho / 3.4 : z.ancho / 1.8, (z.y1 - z.y0 + 140) / 2.4);
+      // Un poco a la derecha del centro de la zona: más aire contra el
+      // contenido, que es donde la mirada ya está cargada.
+      cx = z.x0 + (z.x1 - z.x0) * 0.6 + (conPunteros ? 0.84 * u : 0.05 * u);
+      cy = z.y0 + (z.y1 - z.y0) * 0.64;   // a la altura del botón y los links
+    } else {
+      var b = lugarCruz.getBoundingClientRect(), dyb = corrimiento(lugarCruz);
+      cx = W / 2; cy = b.top + window.scrollY - dyb + b.height / 2; u = Math.min(90, b.height * 0.4);
+      conPunteros = W >= 700;
+    }
     var P = function(x, y){ return { x: cx + x * u, y: cy + y * u }; };
     var e = {
       gacrux: P(-0.05, -1), acrux: P(0.08, 1), mimosa: P(-0.72, -0.05),
       delta: P(0.62, -0.25), epsilon: P(0.34, 0.3)
     };
     var astros = [["gacrux", 2.8], ["mimosa", 3], ["delta", 2.3], ["epsilon", 1.4]];
-    if (W >= 700){ e.alfaCen = P(-2.3, 0.5); e.betaCen = P(-1.6, 0.2); astros.push(["alfaCen", 3.2], ["betaCen", 2.7]); }
+    if (conPunteros){ e.alfaCen = P(-2.3, 0.5); e.betaCen = P(-1.6, 0.2); astros.push(["alfaCen", 3.2], ["betaCen", 2.7]); }
     var lineas = [["gacrux", "acrux"], ["mimosa", "delta"]];
     lineas.forEach(function(par){
       var a = e[par[0]], z = e[par[1]];
@@ -1147,6 +1189,9 @@
     // la incluye a ella misma y la página nunca se puede acortar (quedaba
     // una franja vacía debajo del pie).
     svg.setAttribute("height", 0);
+    // Dónde va la cruz se decide ANTES de medir la página: si va abajo,
+    // abre un espacio y cambia el alto total.
+    lugarCruz.classList.toggle("abajo", !lugarAlCostado());
     W = doc.clientWidth;
     var H = doc.scrollHeight, vh = window.innerHeight;
     svg.setAttribute("width", W); svg.setAttribute("height", H);
