@@ -1313,6 +1313,7 @@
 
     // Cierre: vuela hasta el hueco de Acrux y se queda ahí.
     var ult = prev, dest = cruz.acrux, nv = 70;
+    iFinal = pts.length - 1;
     for (var z = 1; z <= nv; z++){
       var tz = z / nv, uz = 1 - tz;
       var lado2 = ult.x < W / 2 ? W - borde : borde;
@@ -1555,11 +1556,25 @@
   // Corre mientras la estrella se mueve o quedan chispas; después se
   // duerme hasta el próximo scroll. Nada gira en vacío.
   var actual = 0, objetivo = 0, corriendo = false, fDibujado = -1, tAnterior = 0;
+  var iFinal = Infinity;   // índice donde arranca el vuelo hacia la cruz
+
+  // En el vuelo final la estrella tiene velocidad máxima propia: aunque
+  // se baje de un tirón, llega a la cruz despacio y frenando (de ~0,6 a
+  // 0,13 px por ms: unos 3,5 s de vuelo). Sólo hacia adelante: si se sube, vuelve sin freno.
+  function frenarAlFinal(desde, hacia, dt){
+    if (hacia <= desde || hacia <= iFinal) return hacia;
+    var L0 = largoEnIndice(Math.max(desde, iFinal)), LF = largoEnIndice(iFinal);
+    var resta = (total - L0) / ((total - LF) || 1);
+    var vel = 0.13 + 0.45 * resta * resta;
+    return Math.min(hacia, indicePorLargo(L0 + vel * dt));
+  }
+
   function bucle(ahora){
     var dt = tAnterior ? Math.min(40, ahora - tAnterior) : 16; tAnterior = ahora;
     objetivo = indicePorLlave(window.scrollY + window.innerHeight * ALTURA);
-    actual += (objetivo - actual) * 0.14;
-    if (Math.abs(objetivo - actual) < 0.02) actual = objetivo;
+    var nuevo = actual + (objetivo - actual) * 0.14;
+    if (Math.abs(objetivo - nuevo) < 0.02) nuevo = objetivo;
+    actual = frenarAlFinal(actual, nuevo, dt);
 
     if (actual !== fDibujado){ dibujarEstado(actual, true); fDibujado = actual; estrella.classList.remove("discreta"); }
     moverChispas(dt);
