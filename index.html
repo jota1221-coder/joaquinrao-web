@@ -285,47 +285,68 @@
 
   /* ---------- ESTRELLA FUGAZ (scrollytelling) ----------
      Una estrella que baja con el scroll. En cada título pasa por debajo
-     como un subrayado y lo va pintando justo donde está; en las grillas
-     (demos y "Cómo trabajo") recorre el borde de arriba y las líneas se
-     vuelven doradas a su paso. Suelta chispas mientras pinta y lo pintado
-     queda con brillantina.
+     como un subrayado y lo va pintando; en las grillas recorre la línea
+     del medio y las líneas se doran a su paso. Suelta chispas mientras
+     pinta, lo pintado queda con brillantina, y al final completa la Cruz
+     del Sur. La maneja el scroll: si volvés para arriba, se deshace.
 
-     La maneja el scroll, no el tiempo: si volvés para arriba, retrocede y
-     despinta. Todo lo pintable depende de la clase .js-estrella en <html>:
-     sin JS, los títulos y las grillas se ven exactamente como antes. */
+     TRES CAPAS, por rendimiento (la versión de una sola capa se trababa):
+     - .estela: SVG del alto de la página con lo que casi no cambia
+       (estrellitas, cruz, subrayados, brillantina). Sólo se repinta
+       cuando algo cambia de verdad; nada anima si no está en pantalla.
+     - .estela-lienzo: canvas de ~2 pantallas de alto con lo que se mueve
+       (estela, cola, chispas). Vive en la página, así que acompaña el
+       scroll sin atrasarse; se reubica sólo cuando te alejás.
+     - .estrella: la cabeza, un elemento aparte que se mueve con
+       transform: lo mueve la placa de video, sin repintar nada.
+
+     Sin JS, los títulos y las grillas se ven exactamente como antes. */
   :root{
     /* Dorado brillante: no un solo tono sino un metal con reflejos. */
     --oro-brillo: linear-gradient(100deg, #9c6b1f 0%, #e7b24a 14%, #fff2bd 24%, #f2c35a 34%, #b98526 48%,
                   #f6cf6e 60%, #fff6d6 68%, #e3a83e 80%, #9c6b1f 100%);
   }
   .estela{ position:absolute; top:0; left:0; pointer-events:none; z-index:60; overflow:hidden; }
-  .estela .viaje{ fill:none; stroke: var(--star); stroke-width:1; stroke-linecap:round; opacity:0.22; }
-  .estela .pintura{ fill:none; stroke:url(#oro-estela); stroke-width:2.2; stroke-linecap:round;
-                    filter: drop-shadow(0 0 3px oklch(83% 0.125 78 / 0.55)); }
-  .estela .cola line{ stroke: var(--star); stroke-linecap:round; }
-  .estela .halo, .estela .cola{ transition: opacity 0.4s var(--ease); }
-  .estela.discreta .halo{ opacity: 0.2; }
-  .estela.discreta .cola{ opacity: 0; }
-  .estela .chispa{ fill: #fff3c4; }
-  /* Brillantina: puntitos sobre lo ya pintado que titilan cada uno a su ritmo. */
+  .estela-lienzo{ position:absolute; top:0; left:0; pointer-events:none; z-index:61; }
+  .estrella{ position:absolute; top:0; left:0; width:0; height:0; pointer-events:none; z-index:62; will-change: transform; }
+  .estrella .halo{ position:absolute; left:-12px; top:-12px; width:24px; height:24px; border-radius:50%;
+    background: radial-gradient(circle, oklch(96% 0.06 85 / 0.85) 0%, oklch(83% 0.125 78 / 0.32) 35%, oklch(83% 0.125 78 / 0) 70%);
+    transition: opacity 0.4s var(--ease); }
+  .estrella .nucleo{ position:absolute; left:-2.6px; top:-2.6px; width:5.2px; height:5.2px; border-radius:50%; background: oklch(97% 0.03 85); }
+  .estrella.discreta .halo{ opacity: 0.2; }
+  .estrella.unida .halo{ animation: late 2.8s ease-in-out infinite; }
+  @keyframes late{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.4); } }
+
+  /* Subrayados: el oro va con un "resplandor" hecho con una segunda línea
+     ancha y translúcida debajo. Antes era un filtro drop-shadow, que es de
+     lo más caro de pintar y se recalculaba todo el tiempo. */
+  .estela .pintura{ fill:none; stroke:url(#oro-estela); stroke-width:2.2; stroke-linecap:round; }
+  .estela .pintura-halo{ fill:none; stroke: oklch(83% 0.125 78); stroke-width:7; stroke-linecap:round; opacity:0.16; }
+
+  /* Brillantina: se ve siempre que está pintada, pero sólo titila la del
+     tramo que está en pantalla (grupo .vis). */
   .estela .brillo{ fill:#fff6d6; opacity:0; transform-box: fill-box; transform-origin:center; }
-  .estela .brillo.on{ animation: titila var(--t,2.4s) ease-in-out var(--d,0s) infinite; }
-  @keyframes titila{ 0%,100%{ opacity:0; transform:scale(0.3); } 45%{ opacity:0.95; transform:scale(1); } 60%{ opacity:0.2; transform:scale(0.6); } }
+  .estela .brillo.on{ opacity:0.55; }
+  .estela .vis .brillo.on{ animation: titila var(--t,2.4s) ease-in-out var(--d,0s) infinite; }
+  @keyframes titila{ 0%,100%{ opacity:0.1; transform:scale(0.4); } 45%{ opacity:0.95; transform:scale(1); } 60%{ opacity:0.25; transform:scale(0.6); } }
 
   /* Títulos: la capa de arriba tapa con el color normal lo que falta
-     pintar (--p va de 0 a 1 siguiendo a la estrella); abajo, el oro
-     con un reflejo que corre. */
+     pintar (--p va de 0 a 1 siguiendo a la estrella); abajo, el oro. El
+     reflejo corre SÓLO mientras se está pintando: animarlo siempre, en
+     todos los títulos aunque estén fuera de pantalla, repintaba texto
+     sin parar. */
   .js-estrella .pintable{
     --p: 0;
     background-image:
       linear-gradient(var(--dir, 90deg), transparent calc(var(--p) * 100%), var(--ink) calc(var(--p) * 100%)),
       var(--oro-brillo);
     background-size: 100% 100%, 260% 100%;
+    background-position: 0 0, 30% 0;
     -webkit-background-clip: text; background-clip: text;
     -webkit-text-fill-color: transparent;
-    animation: reflejo 3.2s linear infinite;
   }
   .js-estrella .pintable.desde-der{ --dir: 270deg; }
+  .js-estrella .pintable.brillando, .js-estrella .caja-pintable.brillando{ animation: reflejo 3.2s linear infinite; }
   @keyframes reflejo{ from{ background-position: 0 0, 0% 0; } to{ background-position: 0 0, 100% 0; } }
 
   /* Grillas: las líneas son el fondo que asoma entre las celdas (gap)
@@ -338,7 +359,7 @@
       linear-gradient(90deg, transparent calc(var(--p) * 100%), var(--line-soft) calc(var(--p) * 100%)),
       var(--oro-brillo);
     background-size: 100% 100%, 260% 100%;
-    animation: reflejo 3.2s linear infinite;
+    background-position: 0 0, 30% 0;
   }
   .js-estrella .caja-pintable.desde-der{
     background-image:
@@ -346,37 +367,37 @@
       var(--oro-brillo);
   }
 
-  /* Estrellitas por toda la página, sólo en los huecos sin texto. Las
-     que están cerca de la estrella fugaz se encienden cuando pasa. */
+  /* Estrellitas: agrupadas por franjas de altura; sólo titilan las de las
+     franjas que están en pantalla. Las cercanas a la estrella se encienden. */
   .estela .cielo circle{ fill:#ece6d6; transition: opacity 0.7s var(--ease), fill 0.7s var(--ease); }
-  .estela .cielo .titila{ animation: parpadeo var(--t,4s) ease-in-out var(--d,0s) infinite; }
-  .estela .cielo .cerca{ opacity:1 !important; fill:#fff1c2; animation:none; }
+  .estela .cielo .vis .titila{ animation: parpadeo var(--t,4s) ease-in-out var(--d,0s) infinite; }
+  .estela .cielo .cerca{ opacity:1 !important; fill:#fff1c2; animation:none !important; }
   @keyframes parpadeo{ 0%,100%{ opacity: var(--o,0.5); } 50%{ opacity: calc(var(--o,0.5) * 0.25); } }
 
   /* La Cruz del Sur del final. Antes de llegar la estrella: líneas
      punteadas tenues y un hueco donde va Acrux. Cuando llega: las
-     líneas se dibujan en oro y toda la constelación se enciende. */
-  /* La cruz va a la derecha del bloque de contacto; sólo si no hay lugar
-     al costado (celular) se abre este espacio debajo de los links. */
+     líneas se dibujan en oro y toda la constelación se enciende. La cruz
+     va a la derecha del bloque de contacto; sólo si no hay lugar al
+     costado (celular) se abre este espacio debajo de los links. */
   .cruz-lugar{ height:0; }
   .js-estrella .cruz-lugar.abajo{ height: 230px; margin-top: 36px; }
   .estela .cruz .base{ stroke: oklch(74% 0.115 240 / 0.35); stroke-width:1; stroke-dasharray: 3 6; fill:none; }
-  .estela .cruz .oro{ stroke:url(#oro-estela); stroke-width:1.8; fill:none; stroke-linecap:round;
-                      filter: drop-shadow(0 0 4px oklch(83% 0.125 78 / 0.7)); }
-  /* transform-box: sin esto, en SVG la escala del latido se hace desde la
-     esquina de la página y las estrellas se desplazan en vez de latir. */
+  .estela .cruz .oro{ stroke:url(#oro-estela); stroke-width:1.8; fill:none; stroke-linecap:round; }
+  .estela .cruz .oro-halo{ stroke: oklch(83% 0.125 78); stroke-width:6; fill:none; stroke-linecap:round; opacity:0.18; }
+  /* transform-box: sin esto, en SVG la escala se hace desde la esquina de
+     la página y las estrellas se desplazan. */
   .estela .cruz .cruz-astro{ fill:#dfe6f5; transition: fill 0.8s var(--ease); transform-box: fill-box; transform-origin: center; }
+  .estela .cruz .astro-halo{ fill: url(#brillo-astro); opacity:0; transition: opacity 0.9s var(--ease); }
   .estela .cruz .hueco{ fill:none; stroke: oklch(83% 0.125 78 / 0.5); stroke-width:1; stroke-dasharray: 2 3;
-                        transform-box: fill-box; transform-origin:center; animation: espera 2.4s ease-in-out infinite; }
+                        transform-box: fill-box; transform-origin:center; }
+  .estela .cruz.vis .hueco{ animation: espera 2.4s ease-in-out infinite; }
   .estela .cruz .nombre{ font-family: var(--font-mono); font-size:11px; letter-spacing:0.18em; text-transform:uppercase;
                          fill: var(--ink-faint); opacity:0; transition: opacity 0.9s var(--ease) 0.4s; }
   @keyframes espera{ 0%,100%{ opacity:0.35; transform:scale(0.85); } 50%{ opacity:1; transform:scale(1.15); } }
-  .estela.unida .cruz .cruz-astro{ fill:#ffe6a3; filter: drop-shadow(0 0 5px oklch(83% 0.125 78 / 0.9)); animation: late 2.8s ease-in-out infinite; }
+  .estela.unida .cruz .cruz-astro{ fill:#ffe6a3; }
+  .estela.unida .cruz .astro-halo{ opacity:1; }
   .estela.unida .cruz .hueco{ opacity:0; animation:none; }
   .estela.unida .cruz .nombre{ opacity:1; }
-  .estela.unida .cola{ opacity:0; }
-  .estela.unida .halo{ animation: late 2.8s ease-in-out infinite; transform-box: fill-box; transform-origin:center; }
-  @keyframes late{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.35); } }
 
   @media (prefers-reduced-motion: reduce){
     .js-estrella .pintable, .js-estrella .caja-pintable{ animation:none; }
@@ -953,7 +974,13 @@
    estrella está en el punto cuya llave coincide con scroll + 55% de la
    pantalla. En los tramos de pintura la llave avanza mientras la altura
    queda fija: así la estrella recorre el subrayado mientras el título
-   pasa por delante, en vez de cruzarlo de golpe. */
+   pasa por delante, en vez de cruzarlo de golpe.
+
+   Reglas de rendimiento que sostienen todo esto:
+   - En cada cuadro NO se mide la página (getBoundingClientRect fuerza a
+     recalcular el diseño en plena animación). Se mide una vez, al armar.
+   - Se toca sólo lo que cambió desde el cuadro anterior.
+   - Nada anima si no está en pantalla. */
 (function(){
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
@@ -967,50 +994,48 @@
   doc.classList.add("js-estrella");
   titulos.forEach(function(t){ t.classList.add("pintable"); });
   cajas.forEach(function(c){ c.classList.add("caja-pintable"); });
-  var celdasTit = [].slice.call(document.querySelectorAll(".how-cell h4"));
-  celdasTit.forEach(function(t){ t.classList.add("pintable"); });
+  [].forEach.call(document.querySelectorAll(".how-cell h4"), function(t){ t.classList.add("pintable"); });
 
-  // ── La capa ─────────────────────────────────────────────────────
+  // ── Las tres capas ──────────────────────────────────────────────
   var svg = document.createElementNS(NS, "svg");
   svg.setAttribute("class", "estela");
   svg.setAttribute("aria-hidden", "true");
   svg.innerHTML =
     '<defs>' +
-      '<radialGradient id="halo-estrella">' +
-        '<stop offset="0" stop-color="oklch(96% 0.06 85)" stop-opacity="0.85"/>' +
-        '<stop offset="0.35" stop-color="oklch(83% 0.125 78)" stop-opacity="0.32"/>' +
-        '<stop offset="1" stop-color="oklch(83% 0.125 78)" stop-opacity="0"/>' +
-      '</radialGradient>' +
-      // Oro con reflejo que corre a lo largo de la línea pintada
+      // Oro fijo con vetas: se lee como metal sin tener que animarlo.
       '<linearGradient id="oro-estela" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="240" y2="0" spreadMethod="repeat">' +
         '<stop offset="0" stop-color="#b98526"/><stop offset="0.3" stop-color="#f2c35a"/>' +
         '<stop offset="0.45" stop-color="#fff6d6"/><stop offset="0.6" stop-color="#f2c35a"/>' +
         '<stop offset="1" stop-color="#b98526"/>' +
-        '<animateTransform attributeName="gradientTransform" type="translate" from="0 0" to="240 0" dur="2.6s" repeatCount="indefinite"/>' +
       '</linearGradient>' +
+      '<radialGradient id="brillo-astro">' +
+        '<stop offset="0" stop-color="#ffe6a3" stop-opacity="0.75"/>' +
+        '<stop offset="1" stop-color="#ffe6a3" stop-opacity="0"/>' +
+      '</radialGradient>' +
     '</defs>' +
-    '<g class="cielo"></g><g class="cruz"></g>' +
-    '<path class="viaje"/><g class="pinturas"></g><g class="brillos"></g><g class="cola"></g><g class="chispas"></g>' +
-    '<g class="cabeza"><circle class="halo" r="12" fill="url(#halo-estrella)"/>' +
-    '<circle r="2.6" fill="oklch(97% 0.03 85)"/></g>';
-  document.body.appendChild(svg);
+    '<g class="cielo"></g><g class="cruz"></g><g class="pinturas"></g><g class="brillos"></g>';
 
-  var viaje = svg.querySelector(".viaje");
+  var lienzo = document.createElement("canvas");
+  lienzo.className = "estela-lienzo";
+  lienzo.setAttribute("aria-hidden", "true");
+  var ctx = lienzo.getContext("2d");
+
+  var estrella = document.createElement("div");
+  estrella.className = "estrella";
+  estrella.setAttribute("aria-hidden", "true");
+  estrella.innerHTML = '<span class="halo"></span><span class="nucleo"></span>';
+
+  document.body.appendChild(svg);
+  document.body.appendChild(lienzo);
+  document.body.appendChild(estrella);
+
   var pinturasG = svg.querySelector(".pinturas");
   var brillosG = svg.querySelector(".brillos");
-  var chispasG = svg.querySelector(".chispas");
   var cieloG = svg.querySelector(".cielo");
   var cruzG = svg.querySelector(".cruz");
   var lugarCruz = document.querySelector(".cruz-lugar");
-  var cabeza = svg.querySelector(".cabeza");
-  var colaG = svg.querySelector(".cola");
-  var COLA = 14, PASO_COLA = 9, cola = [];
-  for (var k = 0; k < COLA; k++){
-    var l = document.createElementNS(NS, "line"), f = 1 - k / COLA;
-    l.setAttribute("stroke-width", (2.6 * f + 0.3).toFixed(2));
-    l.setAttribute("stroke-opacity", (0.85 * f * f).toFixed(3));
-    colaG.appendChild(l); cola.push(l);
-  }
+  var COLA = 14, PASO_COLA = 9;
+  var ORO = "236,191,98";   // var(--star) en RGB, para el canvas
 
   // Posición sin el desplazamiento de la animación de entrada (.reveal
   // arranca 22px más abajo): si no, el subrayado quedaría corrido.
@@ -1034,9 +1059,8 @@
   }
 
   // En las grillas la estrella va por la línea entre filas más cercana al
-  // centro, no por el borde de arriba: el título de la sección está pegado
-  // encima, y cuando le toca el turno a la grilla su borde de arriba ya se
-  // fue de la pantalla. Por el medio, se la ve pintar.
+  // centro: el título de la sección está pegado encima, y cuando le toca
+  // el turno a la grilla su borde de arriba ya se fue de la pantalla.
   function lineaDelMedio(g){
     var b = g.getBoundingClientRect(), dy = corrimiento(g), centro = b.top + b.height / 2, mejor = null;
     [].forEach.call(g.children, function(c){
@@ -1047,15 +1071,11 @@
   }
 
   // ── La Cruz del Sur ─────────────────────────────────────────────
-  // Posiciones aproximadas de cómo se ve desde Buenos Aires, mirando al
-  // sur: Gacrux arriba, Acrux (la más brillante) abajo, Mimosa a la
-  // izquierda, δ Crucis a la derecha y ε, chiquita, sin línea. En
-  // pantallas anchas se suman los Punteros (α y β Centauri), que en el
-  // cielo real señalan la cruz.
-  var cruz = null, kCompleta = [0, 1], lineasOro = [];
-  // Hay lugar al costado si a la derecha de lo más ancho del bloque de
-  // contacto (el texto, el botón y los links; el título queda arriba)
-  // entra la cruz con los Punteros.
+  // Como se ve desde Buenos Aires mirando al sur: Gacrux arriba, Acrux
+  // (la más brillante) abajo, Mimosa a la izquierda, δ Crucis a la
+  // derecha y ε, chiquita, sin línea. En pantallas anchas se suman los
+  // Punteros (α y β Centauri), que en el cielo real señalan la cruz.
+  var cruz = null, kCompleta = [0, 1], lineasOro = [], cruzY = 0;
   function zonaAlCostado(){
     var titulo = document.querySelector(".contact h2");
     if (!titulo) return null;
@@ -1075,18 +1095,22 @@
     var z = zonaAlCostado();
     return !!z && z.ancho >= 280 && doc.clientWidth >= 1000;
   }
-
+  function linea(clase, a, z){
+    var l = document.createElementNS(NS, "line");
+    l.setAttribute("class", clase);
+    l.setAttribute("x1", a.x); l.setAttribute("y1", a.y); l.setAttribute("x2", z.x); l.setAttribute("y2", z.y);
+    cruzG.appendChild(l);
+    return l;
+  }
   function construirCruz(){
     cruzG.innerHTML = ""; lineasOro = [];
     var cx, cy, u, conPunteros;
     var z = zonaAlCostado();
     if (z && !lugarCruz.classList.contains("abajo")){
-      // Al costado: la figura (de los Punteros a δ Crucis) mide ~3,1u de
-      // ancho y su centro visual está corrido 0,84u a la izquierda.
+      // Al costado: la figura mide ~3,1u de ancho y su centro visual está
+      // corrido 0,84u a la izquierda.
       conPunteros = z.ancho / 3.4 >= 55;
       u = Math.min(90, conPunteros ? z.ancho / 3.4 : z.ancho / 1.8, (z.y1 - z.y0 + 140) / 2.4);
-      // Un poco a la derecha del centro de la zona: más aire contra el
-      // contenido, que es donde la mirada ya está cargada.
       cx = z.x0 + (z.x1 - z.x0) * 0.6 + (conPunteros ? 0.84 * u : 0.05 * u);
       cy = z.y0 + (z.y1 - z.y0) * 0.64;   // a la altura del botón y los links
     } else {
@@ -1094,6 +1118,7 @@
       cx = W / 2; cy = b.top + window.scrollY - dyb + b.height / 2; u = Math.min(90, b.height * 0.4);
       conPunteros = W >= 700;
     }
+    cruzY = cy;
     var P = function(x, y){ return { x: cx + x * u, y: cy + y * u }; };
     var e = {
       gacrux: P(-0.05, -1), acrux: P(0.08, 1), mimosa: P(-0.72, -0.05),
@@ -1101,21 +1126,17 @@
     };
     var astros = [["gacrux", 2.8], ["mimosa", 3], ["delta", 2.3], ["epsilon", 1.4]];
     if (conPunteros){ e.alfaCen = P(-2.3, 0.5); e.betaCen = P(-1.6, 0.2); astros.push(["alfaCen", 3.2], ["betaCen", 2.7]); }
-    var lineas = [["gacrux", "acrux"], ["mimosa", "delta"]];
-    lineas.forEach(function(par){
-      var a = e[par[0]], z = e[par[1]];
-      var base = document.createElementNS(NS, "line");
-      base.setAttribute("class", "base");
-      base.setAttribute("x1", a.x); base.setAttribute("y1", a.y); base.setAttribute("x2", z.x); base.setAttribute("y2", z.y);
-      cruzG.appendChild(base);
-      var oro = document.createElementNS(NS, "line");
-      oro.setAttribute("class", "oro");
-      oro.setAttribute("x1", a.x); oro.setAttribute("y1", a.y); oro.setAttribute("x2", z.x); oro.setAttribute("y2", z.y);
-      var largo = Math.hypot(z.x - a.x, z.y - a.y);
-      oro.style.strokeDasharray = largo; oro.style.strokeDashoffset = largo;
-      cruzG.appendChild(oro); lineasOro.push({ el: oro, largo: largo });
+    [["gacrux", "acrux"], ["mimosa", "delta"]].forEach(function(par){
+      var a = e[par[0]], z2 = e[par[1]], largo = Math.hypot(z2.x - a.x, z2.y - a.y);
+      linea("base", a, z2);
+      var halo = linea("oro-halo", a, z2), oro = linea("oro", a, z2);
+      [halo, oro].forEach(function(l){ l.style.strokeDasharray = largo; l.style.strokeDashoffset = largo; });
+      lineasOro.push({ els: [halo, oro], largo: largo, pc: -1 });
     });
     astros.forEach(function(a){
+      var h = document.createElementNS(NS, "circle");
+      h.setAttribute("class", "astro-halo"); h.setAttribute("cx", e[a[0]].x); h.setAttribute("cy", e[a[0]].y); h.setAttribute("r", a[1] * 3.2);
+      cruzG.appendChild(h);
       var c = document.createElementNS(NS, "circle");
       c.setAttribute("class", "cruz-astro"); c.setAttribute("cx", e[a[0]].x); c.setAttribute("cy", e[a[0]].y); c.setAttribute("r", a[1]);
       cruzG.appendChild(c);
@@ -1131,20 +1152,26 @@
   }
 
   // ── Estrellitas en los huecos ───────────────────────────────────
-  // Semilla fija: al recalcular (cambio de tamaño, carga de fuentes) no
-  // se reacomoda todo el cielo de golpe.
+  // Semilla fija: al recalcular no se reacomoda todo el cielo de golpe.
   function azar(semilla){ return function(){ semilla |= 0; semilla = semilla + 0x6D2B79F5 | 0;
     var t = Math.imul(semilla ^ semilla >>> 15, 1 | semilla); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
     return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
-  var cielitos = [];
+  var cielitos = [], franjas = [], FRANJA = 600;
   function cielo(H, W){
-    cieloG.innerHTML = ""; cielitos = [];
+    cieloG.innerHTML = ""; cielitos = []; franjas = [];
     var rnd = azar(20260925);
     var hero = document.querySelector(".hero");
     var desde = hero ? hero.getBoundingClientRect().bottom + window.scrollY : 0;   // el hero ya tiene su cielo
     var evitar = [].map.call(document.querySelectorAll("p, h1, h2, h3, h4, li, a, .btn, .tags span, .visual, .vlabel, .n, .idx, .tagline, .kind, .num, .cap"),
       function(el){ var r = el.getBoundingClientRect(); return [r.left - 10, r.top + window.scrollY - 10, r.right + 10, r.bottom + window.scrollY + 10]; })
       .filter(function(r){ return r[2] > r[0] && r[3] > r[1]; });
+    // Una franja (un <g>) cada 600px: así se enciende o apaga el titilar
+    // de un grupo entero, no estrella por estrella.
+    for (var fy = 0; fy < H; fy += FRANJA){
+      var g = document.createElementNS(NS, "g");
+      cieloG.appendChild(g);
+      franjas.push({ el: g, y0: fy, y1: fy + FRANJA, vis: false });
+    }
     var cuantas = Math.min(650, Math.round(W * (H - desde) / 9500));
     for (var i = 0, intentos = 0; i < cuantas && intentos < cuantas * 4; intentos++){
       var x = rnd() * W, y = desde + rnd() * (H - desde);
@@ -1157,7 +1184,8 @@
       c.setAttribute("r", (0.35 + Math.pow(rnd(), 3) * 1.2).toFixed(2));
       c.style.opacity = o.toFixed(2); c.style.setProperty("--o", o.toFixed(2));
       if (rnd() < 0.3){ c.setAttribute("class", "titila"); c.style.setProperty("--t", (2.5 + rnd() * 4).toFixed(1) + "s"); c.style.setProperty("--d", (rnd() * 5).toFixed(1) + "s"); }
-      cieloG.appendChild(c); cielitos.push({ el: c, x: x, y: y, cerca: false });
+      franjas[Math.min(franjas.length - 1, Math.floor(y / FRANJA))].el.appendChild(c);
+      cielitos.push({ el: c, x: x, y: y, cerca: false });
       i++;
     }
     cielitos.sort(function(a, b){ return a.y - b.y; });
@@ -1182,18 +1210,19 @@
   var largos = [];        // largo acumulado
   var tramos = [];        // tramos de pintura
   var brillos = [];       // puntitos de brillantina
-  var total = 0, W = 0;
+  var total = 0, W = 0, H = 0;
 
   function construir(){
-    // Antes de medir, la capa se achica a cero: si no, el alto que mide
-    // la incluye a ella misma y la página nunca se puede acortar (quedaba
-    // una franja vacía debajo del pie).
+    // Antes de medir, las capas se achican a cero: si no, el alto que se
+    // mide las incluye a ellas y la página nunca se puede acortar.
     svg.setAttribute("height", 0);
-    // Dónde va la cruz se decide ANTES de medir la página: si va abajo,
-    // abre un espacio y cambia el alto total.
+    lienzo.style.height = "0px"; lienzo.style.transform = "none"; lienzoTop = -1;
+    // Dónde va la cruz se decide ANTES de medir: si va abajo, abre un
+    // espacio y cambia el alto total.
     lugarCruz.classList.toggle("abajo", !lugarAlCostado());
     W = doc.clientWidth;
-    var H = doc.scrollHeight, vh = window.innerHeight;
+    H = doc.scrollHeight;
+    var vh = window.innerHeight;
     svg.setAttribute("width", W); svg.setAttribute("height", H);
     svg.setAttribute("viewBox", "0 0 " + W + " " + H);
 
@@ -1202,7 +1231,7 @@
     var margenVacio = (W - Math.min(W, 1160)) / 2;
     var borde = margenVacio > R * 2 + 24 ? margenVacio / 2 : padding / 2;
 
-    // Anclas en orden de aparición: títulos (subrayado) y cajas (borde).
+    // Anclas en orden de aparición: títulos (subrayado) y grillas.
     var anclas = titulos.map(function(t){ var c = cajaDeTexto(t); return { el: t, tipo: "titulo", x0: c.x0, x1: c.x1, y: c.y + Math.max(5, c.alto * 0.1) }; })
       .concat(cajas.map(function(c){ var b = cajaDe(c); return { el: c, tipo: "caja", x0: b.x0, x1: b.x1, y: lineaDelMedio(c) }; }))
       .sort(function(a, b){ return a.y - b.y; });
@@ -1215,28 +1244,19 @@
     pts = [];
     var puntoEn = function(x, y, llave){ pts.push([Math.max(3, Math.min(W - 3, x)), y, llave]); };
 
-    // Arranque: a la derecha del hero, sobre la constelación.
-    var prev = { x: W - borde, y: kIni, k: kIni };
+    var prev = { x: W - borde, y: kIni, k: kIni };   // arranca sobre la constelación del hero
     puntoEn(prev.x, prev.y, prev.k);
     tramos = [];
 
-    // Cuándo se pinta cada cosa, pensado en dónde está en la PANTALLA:
-    // arranca cuando su línea entra por abajo y termina cuando llega a
-    // ~42% del alto, con todo todavía a la vista. (La llave es scroll +
-    // 55% del alto, así que la línea está en pantalla en y - llave + 55%.)
+    // Cuándo se pinta cada cosa, según dónde está en la PANTALLA: arranca
+    // cuando su línea entra por abajo y termina con todo a la vista. Si
+    // dos ventanas se pisan, se ADELANTA la de arriba: recorriendo de abajo
+    // para arriba, ninguna termina después de su momento ideal.
     var ventanas = anclas.map(function(a){
-      // Las grillas terminan con su línea del medio a media pantalla: son
-      // altas (la de demos pasa los 500px) y si no, la fila de arriba ya
-      // queda debajo de la barra de navegación cuando termina de pintar.
       var entra = a.tipo === "caja" ? 0.86 : 0.74;
       var sale = a.tipo === "caja" ? 0.5 : 0.46;
       return { a: a.y + (ALTURA - entra) * vh, b: a.y + (ALTURA - sale) * vh };
     });
-    // Si dos ventanas se pisan (un título pegado arriba de su grilla), se
-    // ADELANTA la de arriba en vez de atrasar la de abajo: recorriendo de
-    // abajo para arriba, ninguna termina después de su momento ideal. Antes
-    // se atrasaba la grilla y terminaba de pintarse ya casi fuera de la
-    // pantalla.
     var HUECO = 50, MINIMO = 120, limite = kFinPintura;
     for (var v = ventanas.length - 1; v >= 0; v--){
       ventanas[v].b = Math.min(ventanas[v].b, limite);
@@ -1251,8 +1271,7 @@
       var inicio = { x: derAIzq ? a.x1 : a.x0, y: a.y, k: kInicio };
       var fin = { x: derAIzq ? a.x0 : a.x1, y: a.y, k: inicio.k + dur };
 
-      // Viaje hasta el comienzo de la pintura: una curva que se abre hacia
-      // el margen del lado de llegada, con un rulo a mitad de camino.
+      // Viaje hasta el comienzo de la pintura, con un rulo a mitad de camino.
       var lado = derAIzq ? W - borde : borde;
       var n = Math.max(40, Math.round(Math.abs(inicio.y - prev.y) / 6));
       for (var j = 1; j <= n; j++){
@@ -1261,7 +1280,7 @@
         var c2x = lado, c2y = inicio.y - Math.min(160, (inicio.y - prev.y) * 0.35);
         var x = u*u*u*prev.x + 3*u*u*t*c1x + 3*u*t*t*c2x + t*t*t*inicio.x;
         var y = u*u*u*prev.y + 3*u*u*t*c1y + 3*u*t*t*c2y + t*t*t*inicio.y;
-        var d = (t - 0.5) / 0.22;                      // el rulo
+        var d = (t - 0.5) / 0.22;
         if (d > -0.5 && d < 0.5 && inicio.y - prev.y > R * 4){
           var th = 2 * Math.PI * (d + 0.5), env = Math.sin(Math.PI * (d + 0.5));
           var adentro = x < W / 2 ? 1 : -1;
@@ -1271,22 +1290,29 @@
         puntoEn(x, y, prev.k + (inicio.k - prev.k) * t);
       }
 
-      // La pintura: una línea recta bajo el título o sobre el borde de la caja.
       var desde = pts.length - 1;
       var m = Math.max(12, Math.round((a.x1 - a.x0) / 5));
       for (var q = 1; q <= m; q++){
         var tq = q / m;
         puntoEn(inicio.x + (fin.x - inicio.x) * tq, a.y, inicio.k + (fin.k - inicio.k) * tq);
       }
-      tramos.push({ ancla: a, desde: desde, hasta: pts.length - 1, derAIzq: derAIzq, kIni: inicio.k, kFin: fin.k });
+      var tr = { ancla: a, desde: desde, hasta: pts.length - 1, derAIzq: derAIzq, kIni: inicio.k, kFin: fin.k, pr: -1, vis: null, celdas: null };
       a.el.classList.toggle("desde-der", derAIzq);
+      // Los títulos de cada celda de una grilla se miden ACÁ, una vez: antes
+      // se medían en cada cuadro y eso trababa la animación.
+      if (a.tipo === "caja"){
+        tr.celdas = [].map.call(a.el.querySelectorAll(".how-cell h4"), function(h){
+          var b = h.getBoundingClientRect();
+          h.classList.toggle("desde-der", derAIzq);
+          return { el: h, x0: b.left + window.scrollX, x1: b.right + window.scrollX, p: -1 };
+        });
+      }
+      tramos.push(tr);
       prev = fin;
     });
 
-    // Cierre: vuela hasta el hueco de Acrux, con una vuelta en el camino,
-    // y se queda ahí mientras termina el scroll.
-    var ult = prev, dest = cruz.acrux;
-    var nv = 70;
+    // Cierre: vuela hasta el hueco de Acrux y se queda ahí.
+    var ult = prev, dest = cruz.acrux, nv = 70;
     for (var z = 1; z <= nv; z++){
       var tz = z / nv, uz = 1 - tz;
       var lado2 = ult.x < W / 2 ? W - borde : borde;
@@ -1304,28 +1330,30 @@
     puntoEn(dest.x, dest.y, kFin + 1);
     kCompleta = [kLlega, kFin - 15];
 
-    // Largos acumulados
     largos = [0]; total = 0;
     for (var i2 = 1; i2 < pts.length; i2++){
       total += Math.hypot(pts[i2][0] - pts[i2-1][0], pts[i2][1] - pts[i2-1][1]);
       largos.push(total);
     }
-    viaje.setAttribute("d", "M" + pts.map(function(q2){ return q2[0].toFixed(1) + " " + q2[1].toFixed(1); }).join("L"));
-    viaje.style.strokeDasharray = total.toFixed(1);
 
-    // Un trazo dorado por tramo de pintura, y su brillantina
+    // Un subrayado dorado por tramo (con su resplandor) y su brillantina,
+    // agrupada por tramo para encender el titilar de a grupos.
     pinturasG.innerHTML = ""; brillosG.innerHTML = ""; brillos = [];
     tramos.forEach(function(tr){
       var seg = pts.slice(tr.desde, tr.hasta + 1);
-      var path = document.createElementNS(NS, "path");
-      path.setAttribute("class", "pintura");
-      path.setAttribute("d", "M" + seg.map(function(q3){ return q3[0].toFixed(1) + " " + q3[1].toFixed(1); }).join("L"));
-      pinturasG.appendChild(path);
-      tr.path = path;
+      var d = "M" + seg.map(function(q3){ return q3[0].toFixed(1) + " " + q3[1].toFixed(1); }).join("L");
       tr.largo = Math.abs(seg[seg.length - 1][0] - seg[0][0]);
-      path.style.strokeDasharray = tr.largo.toFixed(1);
-      path.style.strokeDashoffset = tr.largo.toFixed(1);
-
+      tr.lineas = ["pintura-halo", "pintura"].map(function(clase){
+        var path = document.createElementNS(NS, "path");
+        path.setAttribute("class", clase);
+        path.setAttribute("d", d);
+        path.style.strokeDasharray = tr.largo.toFixed(1);
+        path.style.strokeDashoffset = tr.largo.toFixed(1);
+        pinturasG.appendChild(path);
+        return path;
+      });
+      tr.grupo = document.createElementNS(NS, "g");
+      brillosG.appendChild(tr.grupo);
       for (var xb = 8; xb < tr.largo - 4; xb += 14 + Math.random() * 16){
         var c = document.createElementNS(NS, "circle");
         var xr = tr.derAIzq ? seg[0][0] - xb : seg[0][0] + xb;
@@ -1335,10 +1363,11 @@
         c.setAttribute("class", "brillo");
         c.style.setProperty("--d", (Math.random() * 2.4).toFixed(2) + "s");
         c.style.setProperty("--t", (1.6 + Math.random() * 1.8).toFixed(2) + "s");
-        brillosG.appendChild(c);
+        tr.grupo.appendChild(c);
         brillos.push({ el: c, k: tr.kIni + (tr.kFin - tr.kIni) * (xb / tr.largo), on: false });
       }
     });
+    cruzVis = null; unidaAhora = null;
   }
 
   // ── Posición según la llave ─────────────────────────────────────
@@ -1368,86 +1397,151 @@
     return lo + (L - largos[lo]) / ((largos[hi] - largos[lo]) || 1);
   }
 
-  // ── Chispas: salen de la estrella mientras pinta ────────────────
-  var chispas = [], chispasCorriendo = false;
+  // ── Chispas (en el canvas) ──────────────────────────────────────
+  var chispas = [];
   function soltarChispas(x, y, cuantas){
     for (var c = 0; c < cuantas && chispas.length < 70; c++){
-      var el = document.createElementNS(NS, "path");
-      var r = 1.6 + Math.random() * 2.4;
-      el.setAttribute("d", "M0 " + (-r) + "L" + (r*0.22) + " " + (-r*0.22) + "L" + r + " 0L" + (r*0.22) + " " + (r*0.22) +
-                           "L0 " + r + "L" + (-r*0.22) + " " + (r*0.22) + "L" + (-r) + " 0L" + (-r*0.22) + " " + (-r*0.22) + "Z");
-      el.setAttribute("class", "chispa");
-      chispasG.appendChild(el);
-      chispas.push({ el: el, x: x, y: y, vx: (Math.random() - 0.5) * 1.6, vy: -0.6 - Math.random() * 1.4,
-                     vida: 0, dura: 520 + Math.random() * 480, giro: Math.random() * 90 });
+      chispas.push({ x: x, y: y, r: 1.6 + Math.random() * 2.4, vx: (Math.random() - 0.5) * 1.6, vy: -0.6 - Math.random() * 1.4,
+                     vida: 0, dura: 520 + Math.random() * 480, giro: Math.random() * 1.6 });
     }
-    if (!chispasCorriendo){ chispasCorriendo = true; ultimo = performance.now(); requestAnimationFrame(moverChispas); }
   }
-  var ultimo = 0;
-  function moverChispas(ahora){
-    var dt = Math.min(40, ahora - ultimo); ultimo = ahora;
+  function moverChispas(dt){
     for (var i = chispas.length - 1; i >= 0; i--){
       var c = chispas[i];
-      c.vida += dt; c.vy += 0.0045 * dt; c.x += c.vx * dt * 0.06; c.y += c.vy * dt * 0.06; c.giro += dt * 0.25;
-      var t = c.vida / c.dura;
-      if (t >= 1){ c.el.remove(); chispas.splice(i, 1); continue; }
-      c.el.setAttribute("transform", "translate(" + c.x.toFixed(1) + " " + c.y.toFixed(1) + ") rotate(" + c.giro.toFixed(0) + ") scale(" + (1 - t * 0.7).toFixed(2) + ")");
-      c.el.setAttribute("opacity", (1 - t).toFixed(2));
+      c.vida += dt; c.vy += 0.0045 * dt; c.x += c.vx * dt * 0.06; c.y += c.vy * dt * 0.06; c.giro += dt * 0.0044;
+      if (c.vida >= c.dura) chispas.splice(i, 1);
     }
-    if (chispas.length) requestAnimationFrame(moverChispas); else chispasCorriendo = false;
   }
 
-  // ── Dibujar ─────────────────────────────────────────────────────
-  var actual = 0, objetivo = 0, corriendo = false, anterior = null;
+  // ── El canvas: se ubica alrededor de la pantalla ────────────────
+  // Mide dos pantallas de alto y vive en la página (no fijo a la
+  // ventana): el navegador lo scrollea junto con el contenido, así la
+  // estela no se atrasa ni "flota". Sólo se reubica cuando la pantalla
+  // se acerca a uno de sus bordes.
+  var lienzoTop = -1, lienzoH = 0, dpr = 1;
+  function ubicarLienzo(){
+    var vh = window.innerHeight, sy = window.scrollY;
+    if (lienzoTop >= 0 && sy >= lienzoTop && sy + vh <= lienzoTop + lienzoH) return false;
+    dpr = Math.min(2, window.devicePixelRatio || 1);
+    lienzoH = Math.min(H, Math.round(vh * 2));
+    // Nunca más abajo del final: un canvas que se pase del fondo alargaría la página.
+    lienzoTop = Math.max(0, Math.min(Math.round(sy - vh * 0.5), H - lienzoH));
+    var ancho = Math.round(W * dpr), alto = Math.round(lienzoH * dpr);
+    if (lienzo.width !== ancho) lienzo.width = ancho;
+    if (lienzo.height !== alto) lienzo.height = alto;
+    lienzo.style.width = W + "px"; lienzo.style.height = lienzoH + "px";
+    lienzo.style.transform = "translate3d(0," + lienzoTop + "px,0)";
+    return true;
+  }
 
-  function dibujar(f, conChispas){
-    var p = puntoEnIndice(f), L = largoEnIndice(f), K = pts[0][2];
-    // la llave actual, interpolada
-    var i = Math.floor(f);
-    K = i >= pts.length - 1 ? pts[pts.length - 1][2] : pts[i][2] + (pts[i+1][2] - pts[i][2]) * (f - i);
+  function pintarLienzo(f, p, L, sinCola){
+    ctx.setTransform(dpr, 0, 0, dpr, 0, -lienzoTop * dpr);
+    ctx.clearRect(0, lienzoTop, W, lienzoH);
+    ctx.lineCap = "round";
 
-    cabeza.setAttribute("transform", "translate(" + p[0].toFixed(1) + " " + p[1].toFixed(1) + ")");
-    viaje.style.strokeDashoffset = (total - L).toFixed(1);
+    // La estela recorrida: sólo los puntos que caen dentro del canvas.
+    var y0 = lienzoTop - 20, y1 = lienzoTop + lienzoH + 20, iFin = Math.min(pts.length - 1, Math.floor(f)), dentro = false;
+    ctx.beginPath();
+    for (var i = 0; i <= iFin; i++){
+      var q = pts[i], en = q[1] > y0 && q[1] < y1;
+      if (en){ if (dentro) ctx.lineTo(q[0], q[1]); else ctx.moveTo(q[0], q[1]); }
+      dentro = en;
+    }
+    if (dentro) ctx.lineTo(p[0], p[1]);
+    ctx.lineWidth = 1; ctx.strokeStyle = "rgba(" + ORO + ",0.22)"; ctx.stroke();
 
-    var prev = p;
-    for (var c = 0; c < COLA; c++){
-      var q = puntoEnIndice(indicePorLargo(L - (c + 1) * PASO_COLA));
-      cola[c].setAttribute("x1", prev[0]); cola[c].setAttribute("y1", prev[1]);
-      cola[c].setAttribute("x2", q[0]); cola[c].setAttribute("y2", q[1]);
-      prev = q;
+    // La cola: tramos cada vez más finos y transparentes hacia atrás.
+    if (!sinCola){
+      var prev = p;
+      for (var c = 0; c < COLA; c++){
+        var qq = puntoEnIndice(indicePorLargo(L - (c + 1) * PASO_COLA)), fr = 1 - c / COLA;
+        ctx.beginPath(); ctx.moveTo(prev[0], prev[1]); ctx.lineTo(qq[0], qq[1]);
+        ctx.lineWidth = 2.6 * fr + 0.3; ctx.strokeStyle = "rgba(" + ORO + "," + (0.85 * fr * fr).toFixed(3) + ")";
+        ctx.stroke();
+        prev = qq;
+      }
     }
 
-    var pintando = false;
-    tramos.forEach(function(tr){
-      var pr = Math.max(0, Math.min(1, (K - tr.kIni) / (tr.kFin - tr.kIni)));
-      if (pr > 0 && pr < 1) pintando = true;
-      tr.path.style.strokeDashoffset = (tr.largo * (1 - pr)).toFixed(1);
-      tr.ancla.el.style.setProperty("--p", pr.toFixed(4));
+    // Las chispas: estrellitas de cuatro puntas que caen y se apagan.
+    for (var k = 0; k < chispas.length; k++){
+      var ch = chispas[k], t = ch.vida / ch.dura, r = ch.r * (1 - t * 0.7);
+      ctx.save();
+      ctx.translate(ch.x, ch.y); ctx.rotate(ch.giro);
+      ctx.beginPath();
+      ctx.moveTo(0, -r); ctx.lineTo(r * 0.22, -r * 0.22); ctx.lineTo(r, 0); ctx.lineTo(r * 0.22, r * 0.22);
+      ctx.lineTo(0, r); ctx.lineTo(-r * 0.22, r * 0.22); ctx.lineTo(-r, 0); ctx.lineTo(-r * 0.22, -r * 0.22);
+      ctx.closePath();
+      ctx.fillStyle = "rgba(255,243,196," + (1 - t).toFixed(2) + ")";
+      ctx.fill();
+      ctx.restore();
+    }
+  }
 
-      // En las cajas, los títulos de cada celda se pintan cuando la
-      // estrella pasa por arriba de su columna.
-      if (tr.ancla.tipo === "caja"){
-        var ax0 = tr.ancla.x0, ax1 = tr.ancla.x1;
-        tr.ancla.el.querySelectorAll(".how-cell h4").forEach(function(h){
-          var b = h.getBoundingClientRect(), x0 = b.left + window.scrollX, x1 = b.right + window.scrollX;
-          var xs = tr.derAIzq ? ax1 - pr * (ax1 - ax0) : ax0 + pr * (ax1 - ax0);
-          var ph = tr.derAIzq ? (x1 - xs) / (x1 - x0) : (xs - x0) / (x1 - x0);
-          h.classList.toggle("desde-der", tr.derAIzq);
-          h.style.setProperty("--p", Math.max(0, Math.min(1, ph)).toFixed(4));
-        });
+  // ── Lo que depende de qué hay en pantalla (barato, en cada cuadro) ─
+  var cruzVis = null;
+  function actualizarVisibles(){
+    var sy = window.scrollY, vh = window.innerHeight, a = sy - 150, b = sy + vh + 150;
+    for (var i = 0; i < franjas.length; i++){
+      var fr = franjas[i], vis = fr.y1 > a && fr.y0 < b;
+      if (vis !== fr.vis){ fr.vis = vis; fr.el.classList.toggle("vis", vis); }
+    }
+    for (var j = 0; j < tramos.length; j++){
+      var tr = tramos[j], v = tr.ancla.y > a && tr.ancla.y < b;
+      if (v !== tr.vis){ tr.vis = v; tr.grupo.classList.toggle("vis", v); }
+    }
+    var cv = cruzY > a - 200 && cruzY < b + 200;
+    if (cv !== cruzVis){ cruzVis = cv; cruzG.classList.toggle("vis", cv); }
+  }
+
+  // ── El estado de la página según dónde está la estrella ──────────
+  var anterior = null, unidaAhora = null, ultimoPunto = null, ultimoLargo = 0;
+  function dibujarEstado(f, conChispas){
+    var p = puntoEnIndice(f), L = largoEnIndice(f), i = Math.floor(f);
+    var K = i >= pts.length - 1 ? pts[pts.length - 1][2] : pts[i][2] + (pts[i+1][2] - pts[i][2]) * (f - i);
+    ultimoPunto = p; ultimoLargo = L;
+
+    estrella.style.transform = "translate3d(" + p[0].toFixed(1) + "px," + p[1].toFixed(1) + "px,0)";
+
+    var pintando = false;
+    for (var t = 0; t < tramos.length; t++){
+      var tr = tramos[t];
+      var pr = Math.round(Math.max(0, Math.min(1, (K - tr.kIni) / (tr.kFin - tr.kIni))) * 1000) / 1000;
+      if (pr > 0 && pr < 1) pintando = true;
+      if (pr === tr.pr) continue;                // sin cambios: no se toca nada
+      var eraActivo = tr.pr > 0 && tr.pr < 1, esActivo = pr > 0 && pr < 1;
+      tr.pr = pr;
+      var off = (tr.largo * (1 - pr)).toFixed(1);
+      tr.lineas[0].style.strokeDashoffset = off; tr.lineas[1].style.strokeDashoffset = off;
+      tr.ancla.el.style.setProperty("--p", pr);
+      if (eraActivo !== esActivo) tr.ancla.el.classList.toggle("brillando", esActivo);
+      if (tr.celdas){
+        var ax0 = tr.ancla.x0, ax1 = tr.ancla.x1, xs = tr.derAIzq ? ax1 - pr * (ax1 - ax0) : ax0 + pr * (ax1 - ax0);
+        for (var c = 0; c < tr.celdas.length; c++){
+          var cel = tr.celdas[c];
+          var ph = tr.derAIzq ? (cel.x1 - xs) / (cel.x1 - cel.x0) : (xs - cel.x0) / (cel.x1 - cel.x0);
+          ph = Math.round(Math.max(0, Math.min(1, ph)) * 1000) / 1000;
+          if (ph !== cel.p){
+            var eraH = cel.p > 0 && cel.p < 1, esH = ph > 0 && ph < 1;
+            cel.p = ph; cel.el.style.setProperty("--p", ph);
+            if (eraH !== esH) cel.el.classList.toggle("brillando", esH);
+          }
+        }
       }
-    });
+    }
 
     for (var b2 = 0; b2 < brillos.length; b2++){
       var on = K >= brillos[b2].k;
       if (on !== brillos[b2].on){ brillos[b2].on = on; brillos[b2].el.classList.toggle("on", on); }
     }
 
-    // El final: cuando la estrella llega al hueco, se dibujan las líneas
-    // y la constelación se enciende. Si volvés para arriba, se deshace.
-    var pc = Math.max(0, Math.min(1, (K - kCompleta[0]) / (kCompleta[1] - kCompleta[0])));
-    lineasOro.forEach(function(l){ l.el.style.strokeDashoffset = (l.largo * (1 - pc)).toFixed(1); });
-    svg.classList.toggle("unida", K >= kCompleta[0] - 2);
+    // El final: las líneas de la cruz se dibujan y la constelación se enciende.
+    var pc = Math.round(Math.max(0, Math.min(1, (K - kCompleta[0]) / (kCompleta[1] - kCompleta[0]))) * 1000) / 1000;
+    for (var l = 0; l < lineasOro.length; l++){
+      var lo = lineasOro[l];
+      if (lo.pc !== pc){ lo.pc = pc; var o = (lo.largo * (1 - pc)).toFixed(1); lo.els[0].style.strokeDashoffset = o; lo.els[1].style.strokeDashoffset = o; }
+    }
+    var unida = K >= kCompleta[0] - 2;
+    if (unida !== unidaAhora){ unidaAhora = unida; svg.classList.toggle("unida", unida); estrella.classList.toggle("unida", unida); }
 
     encenderCerca(p);
 
@@ -1457,30 +1551,45 @@
     anterior = p;
   }
 
-  function tick(){
+  // ── Un solo bucle ───────────────────────────────────────────────
+  // Corre mientras la estrella se mueve o quedan chispas; después se
+  // duerme hasta el próximo scroll. Nada gira en vacío.
+  var actual = 0, objetivo = 0, corriendo = false, fDibujado = -1, tAnterior = 0;
+  function bucle(ahora){
+    var dt = tAnterior ? Math.min(40, ahora - tAnterior) : 16; tAnterior = ahora;
     objetivo = indicePorLlave(window.scrollY + window.innerHeight * ALTURA);
     actual += (objetivo - actual) * 0.14;
     if (Math.abs(objetivo - actual) < 0.02) actual = objetivo;
-    dibujar(actual, true);
-    if (actual !== objetivo){ svg.classList.remove("discreta"); requestAnimationFrame(tick); }
-    else { corriendo = false; revisarTexto(); }
+
+    if (actual !== fDibujado){ dibujarEstado(actual, true); fDibujado = actual; estrella.classList.remove("discreta"); }
+    moverChispas(dt);
+    ubicarLienzo();
+    actualizarVisibles();
+    pintarLienzo(actual, ultimoPunto, ultimoLargo, unidaAhora || estrella.classList.contains("discreta"));
+
+    if (actual !== objetivo || chispas.length){ requestAnimationFrame(bucle); }
+    else { corriendo = false; tAnterior = 0; revisarTexto(); }
   }
-  function despertar(){ if (!corriendo){ corriendo = true; requestAnimationFrame(tick); } }
+  function despertar(){ if (!corriendo){ corriendo = true; requestAnimationFrame(bucle); } }
 
   // Si se detiene sobre un texto, el halo se apaga: no tapa lo que se lee.
+  // (Las capas tienen pointer-events: none, así que no aparecen acá.)
   var TEXTO = /^(P|H1|H2|H3|H4|LI|A|SPAN|DD|DT|BUTTON)$/;
   function revisarTexto(){
-    var p = puntoEnIndice(actual);
+    var p = ultimoPunto; if (!p) return;
     var bajo = document.elementsFromPoint(p[0] - window.scrollX, p[1] - window.scrollY);
-    svg.classList.toggle("discreta", bajo.some(function(el){
-      return !svg.contains(el) && TEXTO.test(el.tagName) && el.textContent.trim().length > 2;
-    }));
+    var tapa = bajo.some(function(el){ return TEXTO.test(el.tagName) && el.textContent.trim().length > 2; });
+    estrella.classList.toggle("discreta", tapa);
+    pintarLienzo(actual, ultimoPunto, ultimoLargo, unidaAhora || tapa);
   }
 
   function rehacer(){
     construir();
     actual = objetivo = indicePorLlave(window.scrollY + window.innerHeight * ALTURA);
-    dibujar(actual, false); revisarTexto();
+    dibujarEstado(actual, false); fDibujado = actual;
+    ubicarLienzo(); actualizarVisibles();
+    pintarLienzo(actual, ultimoPunto, ultimoLargo, unidaAhora);
+    revisarTexto();
   }
   rehacer();
   window.addEventListener("scroll", despertar, { passive: true });
