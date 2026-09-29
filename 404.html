@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Página no encontrada · Joaquín Rao</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230e1220'/%3E%3Cpath d='M16 4.5l1.9 8.6 8.6 1.9-8.6 1.9L16 25.5l-1.9-8.6L5.5 15l8.6-1.9z' fill='%23e6b45a'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400&family=Work+Sans:wght@400;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+  /* Página de error: mismo cielo nocturno que la portada, sin nada más.
+     Existe para que una dirección inexistente devuelva un 404 de verdad
+     (Cloudflare Pages, sin este archivo, sirve la portada con un 200). */
+  :root{
+    --night-0: oklch(12% 0.02 265);
+    --line:    oklch(31% 0.03 265);
+    --ink:       oklch(95% 0.012 85);
+    --ink-muted: oklch(75% 0.02 80);
+    --ink-faint: oklch(60% 0.022 258);
+    --star:      oklch(83% 0.125 78);
+    --star-deep: oklch(74% 0.135 68);
+  }
+  *{ box-sizing: border-box; }
+  html, body{ height: 100%; }
+  body{
+    margin: 0; padding: 24px 16px; display: grid; place-items: center;
+    background: radial-gradient(ellipse at 70% 20%, oklch(19% 0.03 265), var(--night-0) 70%);
+    color: var(--ink); font-family: "Work Sans", system-ui, sans-serif;
+  }
+  main{ max-width: 34rem; display: grid; gap: 18px; }
+  .codigo{ font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 0.8rem; letter-spacing: 0.14em; color: var(--ink-faint); }
+  h1{ margin: 0; font-family: "Fraunces", Georgia, serif; font-weight: 400; font-size: clamp(2rem, 6vw, 2.8rem); line-height: 1.1; text-wrap: balance; }
+  h1 em{ font-style: normal; color: var(--star); }
+  p{ margin: 0; color: var(--ink-muted); line-height: 1.7; }
+  a.btn{
+    justify-self: start; display: inline-block; padding: 12px 20px; border-radius: 999px;
+    background: var(--star); color: var(--night-0); font-weight: 600; font-size: 0.9rem; text-decoration: none;
+  }
+  a.btn:hover{ background: var(--star-deep); }
+  a.btn:focus-visible{ outline: 2px solid var(--ink); outline-offset: 3px; }
+</style>
+</head>
+<body>
+<main>
+  <span class="codigo">ERROR 404</span>
+  <h1>Esta página <em>no existe</em>.</h1>
+  <p>Puede que el link esté mal escrito o que la página ya no esté. Todo lo que hago está en la portada.</p>
+  <a class="btn" href="/">Ir a la portada</a>
+</main>
+</body>
+</html>
